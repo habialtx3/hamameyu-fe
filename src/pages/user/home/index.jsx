@@ -96,7 +96,7 @@ export default function Home() {
           
           <div className="border border-gray-200 rounded-3xl p-6 hover:shadow-lg transition bg-white flex flex-col items-center text-center">
             <img
-              src="/assets/illust/fitur02.png"
+              src="/assets/illust/fitur01.png"
               alt="Lapor Semudah Update Status"
               className="w-full h-40 sm:h-48 object-contain mb-6"
             />

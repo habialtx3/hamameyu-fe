@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { reportService } from "../../../services/api";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import Sidebar from "../components/sidebar";
 
 export default function AdminReportsPage() {
@@ -12,7 +12,7 @@ export default function AdminReportsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("Semua Status");
 
-  // SEKARANG: Diubah menjadi 5 data per halaman
+  // Konfigurasi 5 data per halaman
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5; 
 
@@ -43,21 +43,6 @@ export default function AdminReportsPage() {
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery, statusFilter]);
-
-  // --- BARU: HANDLER UNTUK MENGUBAH STATUS ---
-  const handleStatusChange = async (id, newStatus) => {
-    if (!newStatus) return;
-    const confirmation = window.confirm(`Ubah status laporan ke ${newStatus}?`);
-    if (!confirmation) return;
-
-    const res = await reportService.updateStatus(id, newStatus);
-    if (res.success) {
-      alert("Status laporan berhasil diperbarui!");
-      fetchReports(); // Refresh data setelah berhasil diubah
-    } else {
-      alert("Gagal mengubah status laporan.");
-    }
-  };
 
   // --- 1. KALKULASI SUMMARY ---
   const totalReports = reports.length;
@@ -188,10 +173,6 @@ export default function AdminReportsPage() {
               </select>
               <span className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-gray-500 text-xs">▼</span>
             </div>
-
-            <button className="bg-[#51a750] hover:bg-[#459144] text-white px-6 py-3 rounded-full text-sm font-semibold transition whitespace-nowrap">
-              Export Data
-            </button>
           </div>
         </header>
 
@@ -217,7 +198,7 @@ export default function AdminReportsPage() {
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
               <div>
                 <h2 className="text-lg font-bold text-black">Data Laporan Warga</h2>
-                <p className="text-sm text-gray-500 mt-1">Menampilkan laporan ter-pagination dari database.</p>
+                <p className="text-sm text-gray-500 mt-1">Menampilkan laporan.</p>
               </div>
               <button className="bg-[#eef9f0] text-[#51a750] px-5 py-2.5 rounded-full text-sm font-semibold w-full sm:w-fit">+ Tambah Laporan</button>
             </div>
@@ -235,7 +216,13 @@ export default function AdminReportsPage() {
                   <div key={item.id || index} className="border border-[#edf3ee] rounded-[24px] p-5 bg-[#fcfffc]">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <h3 className="font-bold text-black text-sm line-clamp-1">{item.title}</h3>
+                        <Link 
+                          to={`/admin/reports/${item.id}`}
+                          state={{ from: "/admin/reports" }}
+                          className="font-bold text-black text-sm line-clamp-1 hover:text-[#51a750] transition-colors"
+                        >
+                          {item.title}
+                        </Link>
                         <p className="text-xs text-gray-400 mt-1">ID Laporan: {item.id}</p>
                       </div>
                       <span className={`text-xs px-3 py-1.5 rounded-full font-semibold whitespace-nowrap ${getStatusStyle(item.status)}`}>
@@ -257,22 +244,9 @@ export default function AdminReportsPage() {
                         <span className="text-gray-400">Tanggal Masuk</span>
                         <span className="font-medium text-gray-700 text-right">{formatDate(item.time_report)}</span>
                       </div>
-                      {/* BARU: Dropdown Aksi Cepat ubah Status untuk Mobile */}
-                      <div className="flex justify-between gap-4 items-center pt-2 border-t border-dashed border-gray-100">
-                        <span className="text-gray-400">Ubah Status</span>
-                        <select 
-                          value={item.status || "pending"} 
-                          onChange={(e) => handleStatusChange(item.id, e.target.value)}
-                          className="bg-white border border-gray-200 rounded-lg p-1.5 text-xs focus:outline-none"
-                        >
-                          <option value="pending">Diterima (Pending)</option>
-                          <option value="processing">Diproses (Processing)</option>
-                          <option value="done">Selesai (Done)</option>
-                        </select>
-                      </div>
                     </div>
                     <div className="flex gap-3 mt-5 w-full">
-                      <button onClick={() => navigate(`/reports/${item.id}`)} className="flex-1 text-center px-4 py-3 rounded-full text-sm bg-[#eef9f0] text-[#51a750] font-semibold">Detail</button>
+                      <button onClick={() => navigate(`/admin/reports/${item.id}`, { state: { from: "/admin/reports" } })} className="flex-1 text-center px-4 py-3 rounded-full text-sm bg-[#eef9f0] text-[#51a750] font-semibold">Detail</button>
                       <button className="flex-1 px-4 py-3 rounded-full text-sm bg-[#f5f5f5] text-gray-600 font-semibold">Edit</button>
                     </div>
                   </div>
@@ -283,7 +257,7 @@ export default function AdminReportsPage() {
             {/* TAMPILAN TABLE DESKTOP */}
             {!loading && !error && filteredReports.length > 0 && (
               <div className="hidden lg:block overflow-x-auto">
-                <table className="w-full min-w-[1000px]">
+                <table className="w-full min-w-[900px]">
                   <thead>
                     <tr className="text-center text-sm text-gray-400 border-b border-gray-100">
                       <th className="pb-4 font-medium">No</th>
@@ -293,7 +267,6 @@ export default function AdminReportsPage() {
                       <th className="pb-4 font-medium">Pelapor</th>
                       <th className="pb-4 font-medium">Tanggal</th>
                       <th className="pb-4 font-medium">Status</th>
-                      <th className="pb-4 font-medium">Aksi Cepat</th> {/* MODIFIKASI JUDUL KOLOM */}
                       <th className="pb-4 font-medium">Navigasi</th>
                     </tr>
                   </thead>
@@ -306,7 +279,13 @@ export default function AdminReportsPage() {
                         <td className="py-5">
                           <div className="flex items-center justify-center text-left">
                             <div>
-                              <p className="font-semibold text-sm text-black max-w-[220px] truncate">{item.title}</p>
+                              <Link 
+                                to={`/admin/reports/${item.id}`}
+                                state={{ from: "/admin/reports" }}
+                                className="font-semibold text-sm text-black max-w-[220px] truncate hover:text-[#51a750] hover:underline block transition-colors"
+                              >
+                                {item.title}
+                              </Link>
                               <span className="text-xs text-gray-400 block mt-0.5">ID: {item.id} | Prioritas: {item.priority || "medium"}</span>
                             </div>
                           </div>
@@ -322,21 +301,9 @@ export default function AdminReportsPage() {
                         <td>
                           <span className={`text-xs px-3 py-1.5 rounded-full font-semibold inline-block ${getStatusStyle(item.status)}`}>{getStatusLabel(item.status)}</span>
                         </td>
-                        {/* BARU: Kolom Interaktif Aksi Cepat Mengubah Status */}
-                        <td>
-                          <select
-                            value={item.status || "pending"}
-                            onChange={(e) => handleStatusChange(item.id, e.target.value)}
-                            className="text-xs bg-white border border-gray-200 rounded-full px-3 py-2 focus:outline-none font-medium text-gray-700 cursor-pointer hover:border-[#51a750]"
-                          >
-                            <option value="pending">Set Diterima</option>
-                            <option value="processing">Set Diproses</option>
-                            <option value="done">Set Selesai</option>
-                          </select>
-                        </td>
                         <td>
                           <div className="flex items-center justify-center gap-2">
-                            <button onClick={() => navigate(`/reports/${item.id}`)} className="px-4 py-2 rounded-full text-xs bg-[#eef9f0] text-[#51a750] font-semibold">Detail</button>
+                            <button onClick={() => navigate(`/admin/reports/${item.id}`, { state: { from: "/admin/reports" } })} className="px-4 py-2 rounded-full text-xs bg-[#eef9f0] text-[#51a750] font-semibold">Detail</button>
                             <button className="px-4 py-2 rounded-full text-xs bg-[#f5f5f5] text-gray-600 font-semibold">Edit</button>
                           </div>
                         </td>

@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { useState } from "react";
 
 export default function Sidebar() {
@@ -21,7 +21,6 @@ export default function Sidebar() {
       });
 
       if (response.ok) {
-        // Redirect ke halaman login setelah berhasil logout
         navigate("/login");
       } else {
         alert("Gagal logout, silakan coba lagi.");
@@ -33,6 +32,14 @@ export default function Sidebar() {
       setIsLoggingOut(false);
     }
   };
+
+  // Fungsi helper untuk menentukan class Tailwind berdasarkan status aktif
+  const linkStyle = ({ isActive }) =>
+    `flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200 ${
+      isActive
+        ? "bg-[#eef9f0] text-[#51a750] font-semibold" // Style saat halaman aktif
+        : "text-gray-600 hover:bg-[#f5faf6]"          // Style saat halaman tidak aktif
+    }`;
 
   return (
     <>
@@ -53,29 +60,20 @@ export default function Sidebar() {
             </p>
 
             <div className="space-y-2">
-              <Link
-                to="/admin/dashboard"
-                className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-[#eef9f0] text-[#51a750] font-semibold"
-              >
+              <NavLink to="/admin/dashboard" className={linkStyle}>
                 <span>📊</span>
                 Overview
-              </Link>
+              </NavLink>
 
-              <Link
-                to="/admin/reports"
-                className="flex items-center gap-3 px-4 py-3 rounded-2xl text-gray-600 hover:bg-[#f5faf6] transition"
-              >
+              <NavLink to="/admin/reports" className={linkStyle}>
                 <span>📄</span>
                 Semua Laporan
-              </Link>
+              </NavLink>
 
-              <Link
-                to="/admin/map-redzone"
-                className="flex items-center gap-3 px-4 py-3 rounded-2xl text-gray-600 hover:bg-[#f5faf6] transition"
-              >
+              <NavLink to="/admin/map-redzone" className={linkStyle}>
                 <span>🗺</span>
                 Peta Redzone
-              </Link>
+              </NavLink>
             </div>
           </div>
 
@@ -84,14 +82,10 @@ export default function Sidebar() {
               Management
             </p>
 
-            
-              <Link
-                to="/admin/user-management"
-                className="flex items-center gap-3 px-4 py-3 rounded-2xl text-gray-600 hover:bg-[#f5faf6] transition"
-              >
-                <span>🗺</span>
-                User Management
-              </Link>
+            <NavLink to="/admin/user-management" className={linkStyle}>
+              <span>👥</span> {/* Sedikit perbaikan emoji agar lebih cocok dengan User */}
+              User Management
+            </NavLink>
           </div>
         </nav>
 

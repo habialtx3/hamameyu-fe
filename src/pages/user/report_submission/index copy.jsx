@@ -75,7 +75,7 @@ export default function ReportSubmissionPage() {
 
   try {
     const response = await fetch(
-      `${import.meta.env.VITE_API_URL}/api/reports`,
+      `${import.meta.env.VITE_API_URL}/reports`,
       {
         method: "POST",
         headers: {

@@ -232,9 +232,9 @@ export default function AdminRedzonePage() {
                 ▼
               </span>
             </div>
-            <button className="bg-[#51a750] hover:bg-[#459144] text-white px-6 py-3 rounded-full text-sm font-semibold transition whitespace-nowrap">
+            {/* <button className="bg-[#51a750] hover:bg-[#459144] text-white px-6 py-3 rounded-full text-sm font-semibold transition whitespace-nowrap">
               Export Map
-            </button>
+            </button> */}
           </div>
         </header>
 

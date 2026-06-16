@@ -15,6 +15,7 @@ import AdminRedzonePage from "../pages/admin/map_redzone";
 import ProtectedRoute from "./protectedRoute";
 import UserReportsPage from "../pages/user/reports";
 import AdminUserManagement from "../pages/admin/user_management";
+import AdminReportDetailPage from "../pages/admin/report_detail";
 
 // Import komponen proteksi yang baru kita buat
 
@@ -93,6 +94,14 @@ const router = createBrowserRouter([
       {
         path: "/admin/user-management",
         element: <AdminUserManagement />,
+      },
+      {
+        path: "/admin/user-management",
+        element: <AdminUserManagement />,
+      },
+      {
+        path: "/admin/reports/:id",
+        element: <AdminReportDetailPage />,
       },
     ],
   },

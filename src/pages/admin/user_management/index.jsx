@@ -6,11 +6,20 @@ export default function AdminUserManagement() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  
+  // State untuk Pagination Konsep Kamu
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   // Ambil data user dari backend saat halaman dimuat
   useEffect(() => {
     fetchUserData();
   }, []);
+
+  // Reset ke halaman 1 setiap kali user mengetik di kolom pencarian
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   const fetchUserData = async () => {
     setLoading(true);
@@ -71,6 +80,16 @@ export default function AdminUserManagement() {
       { adminCount: 0, residentCount: 0 }
     );
   }, [filteredUsers]);
+
+  // --- VARIABEL KALKULASI PAGINATION (Sesuai Struktur Kamu) ---
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+
+  // Potong data user untuk ditampilkan per halaman
+  const paginatedUsers = useMemo(() => {
+    return filteredUsers.slice(indexOfFirstItem, indexOfLastItem);
+  }, [filteredUsers, indexOfFirstItem, indexOfLastItem]);
 
   return (
     <div className="bg-[#f6faf7] min-h-screen lg:flex">
@@ -147,52 +166,94 @@ export default function AdminUserManagement() {
             <div className="overflow-x-auto">
               {loading ? (
                 <p className="text-sm text-gray-400 text-center py-10">Memuat data pengguna...</p>
-              ) : filteredUsers.length === 0 ? (
+              ) : paginatedUsers.length === 0 ? (
                 <p className="text-sm text-gray-400 text-center py-10">Tidak ada pengguna yang cocok.</p>
               ) : (
-                <table className="w-full text-center border-collapse text-xs">
-                  <thead>
-                    <tr className="border-b border-gray-100 text-gray-400 font-semibold">
-                      <th className="pb-3 text-left pl-4">Nama Lengkap</th>
-                      <th className="pb-3">Username</th>
-                      <th className="pb-3">Email</th>
-                      <th className="pb-3">Role</th>
-                      <th className="pb-3 text-center">Aksi Manajemen</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredUsers.map((user) => (
-                      <tr key={user.id} className="border-b border-gray-50 last:border-none hover:bg-gray-50/50 transition">
-                        <td className="py-4 text-left pl-4 font-bold text-gray-800">
-                          {user.name}
-                        </td>
-                        <td className="py-4 text-gray-600 font-mono">@{user.username}</td>
-                        <td className="py-4 text-gray-600">{user.email}</td>
-                        <td className="py-4">
-                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider ${
-                            user.role_name === "admin" 
-                              ? "bg-blue-100 text-blue-800" 
-                              : "bg-gray-100 text-gray-700"
-                          }`}>
-                            {user.role_name}
-                          </span>
-                        </td>
-                        <td className="py-4 text-center">
-                          <button
-                            onClick={() => handleRoleChange(user.id, user.role_name)}
-                            className={`px-3 py-1.5 rounded-xl shadow-sm text-[11px] font-bold transition duration-200 ${
-                              user.role_name === "admin"
-                                ? "bg-amber-500 hover:bg-amber-600 text-white"
-                                : "bg-[#51a750] hover:bg-[#439242] text-white"
-                            }`}
-                          >
-                            {user.role_name === "admin" ? "Turunkan ke Resident" : "Jadikan Admin"}
-                          </button>
-                        </td>
+                <>
+                  <table className="w-full text-center border-collapse text-xs">
+                    <thead>
+                      <tr className="border-b border-gray-100 text-gray-400 font-semibold">
+                        <th className="pb-3 text-left pl-4">Nama Lengkap</th>
+                        <th className="pb-3">Username</th>
+                        <th className="pb-3">Email</th>
+                        <th className="pb-3">Role</th>
+                        <th className="pb-3 text-center">Aksi Manajemen</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {paginatedUsers.map((user) => (
+                        <tr key={user.id} className="border-b border-gray-50 last:border-none hover:bg-gray-50/50 transition">
+                          <td className="py-4 text-left pl-4 font-bold text-gray-800">
+                            {user.name}
+                          </td>
+                          <td className="py-4 text-gray-600 font-mono">@{user.username}</td>
+                          <td className="py-4 text-gray-600">{user.email}</td>
+                          <td className="py-4">
+                            <span className={`px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider ${
+                              user.role_name === "admin" 
+                                ? "bg-blue-100 text-blue-800" 
+                                : "bg-gray-100 text-gray-700"
+                            }`}>
+                              {user.role_name}
+                            </span>
+                          </td>
+                          <td className="py-4 text-center">
+                            <button
+                              onClick={() => handleRoleChange(user.id, user.role_name)}
+                              className={`px-3 py-1.5 rounded-xl shadow-sm text-[11px] font-bold transition duration-200 ${
+                                user.role_name === "admin"
+                                  ? "bg-amber-500 hover:bg-amber-600 text-white"
+                                  : "bg-[#51a750] hover:bg-[#439242] text-white"
+                              }`}
+                            >
+                              {user.role_name === "admin" ? "Turunkan ke Resident" : "Jadikan Admin"}
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+
+                  {/* CONTROL PAGINATION DINAMIS SESUAI REQUEST */}
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-8 pt-4 border-t border-gray-100">
+                    <p className="text-sm text-gray-500">
+                      Menampilkan {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, filteredUsers.length)} dari{" "}
+                      {filteredUsers.length} pengguna ditemukan
+                    </p>
+
+                    <div className="flex items-center gap-2">
+                      <button 
+                        onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                        className="w-10 h-10 rounded-full border border-gray-200 text-gray-500 hover:bg-[#f5faf6] transition disabled:opacity-40 disabled:hover:bg-transparent disabled:cursor-not-allowed text-sm"
+                      >
+                        &larr;
+                      </button>
+
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNumber) => (
+                        <button
+                          key={pageNumber}
+                          onClick={() => setCurrentPage(pageNumber)}
+                          className={`w-10 h-10 rounded-full font-semibold text-sm transition ${
+                            currentPage === pageNumber
+                              ? "bg-[#51a750] text-white"
+                              : "border border-gray-200 text-gray-500 hover:bg-[#f5faf6]"
+                          }`}
+                        >
+                          {pageNumber}
+                        </button>
+                      ))}
+
+                      <button 
+                        onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                        className="w-10 h-10 rounded-full border border-gray-200 text-gray-500 hover:bg-[#f5faf6] transition disabled:opacity-40 disabled:hover:bg-transparent disabled:cursor-not-allowed text-sm"
+                      >
+                        &rarr;
+                      </button>
+                    </div>
+                  </div>
+                </>
               )}
             </div>
           </div>
