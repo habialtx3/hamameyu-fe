@@ -20,11 +20,17 @@ let DefaultIcon = L.icon({
 L.Marker.prototype.options.icon = DefaultIcon;
 
 export default function ReportSubmissionPage() {
-  const { register, handleSubmit, setValue, watch } = useForm({
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    formState: { errors },
+  } = useForm({
     defaultValues: {
-      priority: "medium", // Default fallback sesuai skema database
+      priority: "medium",
       category: "",
-    }
+    },
   });
 
   // Ambil state untuk preview nama file gambar yang diunggah
@@ -43,9 +49,14 @@ export default function ReportSubmissionPage() {
     { value: "SIGNS_AND_MARKINGS", label: "Rambu & Markah Jalan", icon: "🚧" },
     { value: "PUBLIC_FACILITIES", label: "Fasilitas Publik", icon: "🏢" },
     { value: "ROAD_AND_SIDEWALK", label: "Jalan & Trotoar Rusak", icon: "🛣️" },
-    { value: "TREES_AND_GREEN_SPACE", label: "Pohon & Ruang Hijau", icon: "🌳" },
+    {
+      value: "TREES_AND_GREEN_SPACE",
+      label: "Pohon & Ruang Hijau",
+      icon: "🌳",
+    },
   ];
 
+  console.log("Input bermasalah saat ini:", errors);
   const backPath = location.state?.from || "/";
 
   // Komponen pembantu internal Leaflet untuk menangkap aksi klik user di atas peta
@@ -72,7 +83,10 @@ export default function ReportSubmissionPage() {
     formData.append("category", data.category);
     formData.append("priority", data.priority);
     formData.append("location[latitude]", parseFloat(mapCoords.lat.toFixed(6)));
-    formData.append("location[longitude]", parseFloat(mapCoords.lng.toFixed(6)));
+    formData.append(
+      "location[longitude]",
+      parseFloat(mapCoords.lng.toFixed(6)),
+    );
 
     // Append gambar (maksimal 2)
     if (data.images && data.images.length > 0) {
@@ -106,8 +120,18 @@ export default function ReportSubmissionPage() {
           onClick={() => navigate(backPath)}
           className="flex items-center hover:text-black transition font-medium text-sm"
         >
-          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          <svg
+            className="w-5 h-5 mr-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M10 19l-7-7m0 0l7-7m-7 7h18"
+            />
           </svg>
           Kembali
         </button>
@@ -116,22 +140,27 @@ export default function ReportSubmissionPage() {
       {/* CONTENT FORM */}
       <div className="flex-1 overflow-y-auto px-4 sm:px-6 md:px-8 py-6">
         <div className="max-w-7xl mx-auto flex flex-col xl:flex-row gap-6 lg:gap-8">
-          
           {/* SISI KIRI: FORM DATA */}
           <div className="flex-1 bg-white border border-gray-200 rounded-2xl p-4 sm:p-6 lg:p-8 shadow-sm">
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-              
               {/* JUDUL */}
               <div>
                 <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
                   Judul Laporan
                 </label>
                 <input
-                  {...register("title", { required: true })}
+                  {...register("title", {
+                    required: "Judul laporan wajib diisi",
+                  })}
                   type="text"
                   placeholder="Contoh: Tumpukan Sampah di Depan Gerbang Kompleks"
                   className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none transition-all focus:border-black focus:ring-4 focus:ring-gray-100"
                 />
+                {errors.title && (
+                  <p className="text-xs text-red-500 mt-1 font-semibold">
+                    {errors.title.message}
+                  </p>
+                )}
               </div>
 
               {/* DESKRIPSI (DESCRIPTION) */}
@@ -140,29 +169,45 @@ export default function ReportSubmissionPage() {
                   Deskripsi / Detail Kejadian
                 </label>
                 <textarea
-                  {...register("description", { required: true })}
+                  {...register("description", {
+                    required: "Deskripsi kejadian wajib diisi",
+                  })}
                   rows="6"
-                  placeholder="Jelaskan detail masalah, contoh: Sampah basah dari pedagang pasar malam belum diangkut selama 3 hari berturut-turut hingga menimbulkan bau menyengat..."
+                  placeholder="Jelaskan detail masalah..."
                   className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm resize-none outline-none transition-all focus:border-black focus:ring-4 focus:ring-gray-100"
                 />
+                {errors.description && (
+                  <p className="text-xs text-red-500 mt-1 font-semibold">
+                    {errors.description.message}
+                  </p>
+                )}
               </div>
 
               {/* GROUP SELECT: PRIORITAS & KATEGORI */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                
                 {/* TINGKAT PRIORITAS (ENUM VALID) */}
                 <div>
                   <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
                     Tingkat Prioritas
                   </label>
                   <select
-                    {...register("priority")}
+                    {...register("category", {
+                      required: "Silakan pilih salah satu kategori",
+                    })}
                     className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 outline-none transition-all focus:border-black focus:ring-4 focus:ring-gray-100"
                   >
-                    <option value="low">Rendah (Low)</option>
-                    <option value="medium">Sedang (Medium)</option>
-                    <option value="high">Tinggi / Mendesak (High)</option>
+                    <option value="">Pilih kategori laporan</option>
+                    {CATEGORY_OPTIONS.map((item) => (
+                      <option key={item.value} value={item.value}>
+                        {item.icon} {item.label}
+                      </option>
+                    ))}
                   </select>
+                  {errors.category && (
+                    <p className="text-xs text-red-500 mt-1 font-semibold">
+                      {errors.category.message}
+                    </p>
+                  )}
                 </div>
 
                 {/* KATEGORI LAPORAN (ENUM VALID) */}
@@ -174,7 +219,9 @@ export default function ReportSubmissionPage() {
                     {...register("category", { required: true })}
                     className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 outline-none transition-all focus:border-black focus:ring-4 focus:ring-gray-100"
                   >
-                    <option value="" disabled>Pilih kategori laporan</option>
+                    <option value="" disabled>
+                      Pilih kategori laporan
+                    </option>
                     {CATEGORY_OPTIONS.map((item) => (
                       <option key={item.value} value={item.value}>
                         {item.icon} {item.label}
@@ -198,21 +245,34 @@ export default function ReportSubmissionPage() {
 
           {/* SISI KANAN: MEDIA BUKTI & TITIK KOORDINAT GEOSPASIAL */}
           <div className="w-full xl:w-96 flex flex-col gap-6">
-            
             {/* FILE IMAGE UPLOAD */}
             <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
-              <h3 className="text-sm font-bold text-black mb-3">Foto Lampiran Bukti (Maks 2)</h3>
+              <h3 className="text-sm font-bold text-black mb-3">
+                Foto Lampiran Bukti (Maks 2)
+              </h3>
 
               <div className="relative border-2 border-dashed border-gray-200 hover:border-black transition-all rounded-2xl bg-gray-50 p-6 flex flex-col items-center justify-center text-center">
                 <div className="w-16 h-16 bg-gray-200 rounded-xl mb-3 flex items-center justify-center">
-                  <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  <svg
+                    className="w-8 h-8 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
                   </svg>
                 </div>
 
                 <div className="text-gray-500 text-xs">
                   <p className="font-medium">Klik untuk pilih gambar</p>
-                  <p className="text-[10px] mt-1 text-gray-400">Format JPEG/PNG hingga 2 file (Maks 2MB/file)</p>
+                  <p className="text-[10px] mt-1 text-gray-400">
+                    Format JPEG/PNG hingga 2 file (Maks 2MB/file)
+                  </p>
                 </div>
 
                 <input
@@ -227,11 +287,17 @@ export default function ReportSubmissionPage() {
               {/* List Nama Gambar Terpilih */}
               {watchedImages && watchedImages.length > 0 && (
                 <div className="mt-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
-                  <p className="text-[11px] font-bold text-gray-500 mb-1">File Terpilih:</p>
+                  <p className="text-[11px] font-bold text-gray-500 mb-1">
+                    File Terpilih:
+                  </p>
                   <ul className="text-xs text-gray-600 space-y-1 list-disc list-inside">
-                    {Array.from(watchedImages).slice(0, 2).map((file, idx) => (
-                      <li key={idx} className="truncate">{file.name}</li>
-                    ))}
+                    {Array.from(watchedImages)
+                      .slice(0, 2)
+                      .map((file, idx) => (
+                        <li key={idx} className="truncate">
+                          {file.name}
+                        </li>
+                      ))}
                   </ul>
                 </div>
               )}
@@ -240,8 +306,12 @@ export default function ReportSubmissionPage() {
             {/* LEAFLET GEOLOCATION PICKER */}
             <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
               <div className="mb-2">
-                <h3 className="text-sm font-bold text-black">Tandai Lokasi Masalah</h3>
-                <p className="text-[11px] text-gray-400 mt-0.5">Geser atau klik peta tepat pada posisi kejadian.</p>
+                <h3 className="text-sm font-bold text-black">
+                  Tandai Lokasi Masalah
+                </h3>
+                <p className="text-[11px] text-gray-400 mt-0.5">
+                  Geser atau klik peta tepat pada posisi kejadian.
+                </p>
               </div>
 
               <div className="w-full aspect-square rounded-2xl overflow-hidden border border-gray-200 relative z-10">
@@ -264,7 +334,6 @@ export default function ReportSubmissionPage() {
                 <span>Lng: {mapCoords.lng.toFixed(5)}</span>
               </div>
             </div>
-
           </div>
         </div>
       </div>
