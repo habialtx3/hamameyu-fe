@@ -15,7 +15,7 @@ export default function ReportDetailPage() {
 
   // 3. Efek untuk fetch data detail dari backend saat halaman dibuka
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL}/api/reports/${id}`)
+    fetch(`${import.meta.env.VITE_API_URL}/reports/${id}`)
       .then((res) => res.json())
       .then((responseJson) => {
         if (responseJson.success) {
