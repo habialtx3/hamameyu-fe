@@ -67,7 +67,9 @@ export default function AdminRedzonePage() {
     let minDistance = Infinity;
 
     areas.forEach((area) => {
-      const distance = Math.sqrt(Math.pow(latitude - area.lat, 2) + Math.pow(longitude - area.lng, 2));
+      const distance = Math.sqrt(
+        Math.pow(latitude - area.lat, 2) + Math.pow(longitude - area.lng, 2),
+      );
       if (distance < minDistance) {
         minDistance = distance;
         closestArea = area;
@@ -80,13 +82,21 @@ export default function AdminRedzonePage() {
   const getCategoryLabel = (category) => {
     if (!category) return "Laporan Umum";
     switch (category.toUpperCase()) {
-      case "WASTE": return "Pengelolaan Sampah";
-      case "SIGNS_AND_MARKINGS": return "Rambu & Markah Jalan";
-      case "PUBLIC_FACILITIES": return "Fasilitas Publik";
-      case "ROAD_AND_SIDEWALK": return "Jalan & Trotoar Rusak";
-      case "TREES_AND_GREEN_SPACE": return "Pohon & Ruang Terbuka";
+      case "WASTE":
+        return "Pengelolaan Sampah";
+      case "SIGNS_AND_MARKINGS":
+        return "Rambu & Markah Jalan";
+      case "PUBLIC_FACILITIES":
+        return "Fasilitas Publik";
+      case "ROAD_AND_SIDEWALK":
+        return "Jalan & Trotoar Rusak";
+      case "TREES_AND_GREEN_SPACE":
+        return "Pohon & Ruang Terbuka";
       default:
-        return category.toLowerCase().replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+        return category
+          .toLowerCase()
+          .replace(/_/g, " ")
+          .replace(/\b\w/g, (c) => c.toUpperCase());
     }
   };
 
@@ -102,15 +112,23 @@ export default function AdminRedzonePage() {
 
         const groups = {};
         rawReports.forEach((report) => {
-          const areaName = getAreaFromCoordinates(report.location?.latitude, report.location?.longitude);
+          const areaName = getAreaFromCoordinates(
+            report.location?.latitude,
+            report.location?.longitude,
+          );
 
           if (!groups[areaName]) {
-            groups[areaName] = { area: areaName, reportsCount: 0, categories: {} };
+            groups[areaName] = {
+              area: areaName,
+              reportsCount: 0,
+              categories: {},
+            };
           }
 
           groups[areaName].reportsCount += 1;
           const catLabel = getCategoryLabel(report.category);
-          groups[areaName].categories[catLabel] = (groups[areaName].categories[catLabel] || 0) + 1;
+          groups[areaName].categories[catLabel] =
+            (groups[areaName].categories[catLabel] || 0) + 1;
         });
 
         const processedZones = Object.values(groups).map((zone) => {
@@ -127,7 +145,12 @@ export default function AdminRedzonePage() {
           if (zone.reportsCount > 10) riskLevel = "High";
           else if (zone.reportsCount > 4) riskLevel = "Medium";
 
-          return { area: zone.area, level: riskLevel, reports: zone.reportsCount, issue: dominantIssue };
+          return {
+            area: zone.area,
+            level: riskLevel,
+            reports: zone.reportsCount,
+            issue: dominantIssue,
+          };
         });
 
         processedZones.sort((a, b) => b.reports - a.reports);
@@ -166,35 +189,52 @@ export default function AdminRedzonePage() {
 
   const getLevelStyle = (level) => {
     switch (level) {
-      case "High": return "bg-red-100 text-red-700";
-      case "Medium": return "bg-yellow-100 text-yellow-700";
-      case "Low": return "bg-green-100 text-green-700";
-      default: return "bg-gray-100 text-gray-600";
+      case "High":
+        return "bg-red-100 text-red-700";
+      case "Medium":
+        return "bg-yellow-100 text-yellow-700";
+      case "Low":
+        return "bg-green-100 text-green-700";
+      default:
+        return "bg-gray-100 text-gray-600";
     }
   };
 
   return (
     <div className="bg-[#f6faf7] min-h-screen lg:flex">
       <Sidebar />
-      
+
       <main className="flex-1 overflow-y-auto">
         {/* TOPBAR */}
         <header className="px-4 sm:px-6 lg:px-10 py-5 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-5">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-black">Peta Redzone</h1>
-            <p className="text-sm text-gray-500 mt-1">Pantau semua koordinat laporan aktif warga di Kota Batam secara real-time.</p>
+            <h1 className="text-2xl sm:text-3xl font-black text-black">
+              Peta Redzone
+            </h1>
+            <p className="text-sm text-gray-500 mt-1">
+              Pantau semua koordinat laporan aktif warga di Kota Batam secara
+              real-time.
+            </p>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto">
             <div className="relative w-full sm:w-auto">
-              <select value={timeFilter} onChange={(e) => setTimeFilter(e.target.value)} className="appearance-none bg-white border border-gray-200 rounded-full px-5 py-3 pr-12 text-sm focus:outline-none w-full sm:w-auto">
+              <select
+                value={timeFilter}
+                onChange={(e) => setTimeFilter(e.target.value)}
+                className="appearance-none bg-white border border-gray-200 rounded-full px-5 py-3 pr-12 text-sm focus:outline-none w-full sm:w-auto"
+              >
                 <option>7 Hari Terakhir</option>
                 <option>30 Hari Terakhir</option>
                 <option>1 Tahun</option>
               </select>
-              <span className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-gray-500 text-xs">▼</span>
+              <span className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-gray-500 text-xs">
+                ▼
+              </span>
             </div>
-            <button className="bg-[#51a750] hover:bg-[#459144] text-white px-6 py-3 rounded-full text-sm font-semibold transition whitespace-nowrap">Export Map</button>
+            <button className="bg-[#51a750] hover:bg-[#459144] text-white px-6 py-3 rounded-full text-sm font-semibold transition whitespace-nowrap">
+              Export Map
+            </button>
           </div>
         </header>
 
@@ -203,15 +243,21 @@ export default function AdminRedzonePage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 mb-8">
             <div className="bg-white rounded-[28px] border border-[#edf3ee] p-6">
               <p className="text-sm text-gray-500">Total Area Terdeteksi</p>
-              <h2 className="text-3xl font-black mt-2 text-black">{loading ? "..." : `${totalAreaRedzone} Area`}</h2>
+              <h2 className="text-3xl font-black mt-2 text-black">
+                {loading ? "..." : `${totalAreaRedzone} Area`}
+              </h2>
             </div>
             <div className="bg-white rounded-[28px] border border-[#edf3ee] p-6">
               <p className="text-sm text-gray-500">Area Risiko Tinggi</p>
-              <h2 className="text-3xl font-black mt-2 text-red-600">{loading ? "..." : `${highRiskAreas} Area`}</h2>
+              <h2 className="text-3xl font-black mt-2 text-red-600">
+                {loading ? "..." : `${highRiskAreas} Area`}
+              </h2>
             </div>
             <div className="bg-white rounded-[28px] border border-[#edf3ee] p-6 sm:col-span-2 xl:col-span-1">
               <p className="text-sm text-gray-500">Total Semua Laporan</p>
-              <h2 className="text-3xl font-black mt-2 text-[#51a750]">{loading ? "..." : totalReportsCount.toLocaleString("id-ID")}</h2>
+              <h2 className="text-3xl font-black mt-2 text-[#51a750]">
+                {loading ? "..." : totalReportsCount.toLocaleString("id-ID")}
+              </h2>
             </div>
           </div>
 
@@ -219,143 +265,205 @@ export default function AdminRedzonePage() {
           <div className="bg-white rounded-[30px] border border-[#edf3ee] p-4 sm:p-6 mb-8">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
               <div>
-                <h2 className="text-lg font-bold text-black">Peta Sebaran Laporan Individu</h2>
-                <p className="text-sm text-gray-500 mt-1">Menampilkan pin lokasi asli dari setiap laporan yang dikirim warga.</p>
+                <h2 className="text-lg font-bold text-black">
+                  Peta Sebaran Laporan Individu
+                </h2>
+                <p className="text-sm text-gray-500 mt-1">
+                  Menampilkan pin lokasi asli dari setiap laporan yang dikirim
+                  warga.
+                </p>
               </div>
 
               <div className="flex flex-wrap items-center gap-4 text-xs">
                 <div className="flex items-center gap-2 text-black">
-                  <div className="w-3 h-3 rounded-full bg-red-500" /> Prioritas Tinggi (High)
+                  <div className="w-3 h-3 rounded-full bg-red-500" /> Prioritas
+                  Tinggi (High)
                 </div>
                 <div className="flex items-center gap-2 text-black">
-                  <div className="w-3 h-3 rounded-full bg-amber-500" /> Prioritas Sedang (Medium)
+                  <div className="w-3 h-3 rounded-full bg-amber-500" />{" "}
+                  Prioritas Sedang (Medium)
                 </div>
                 <div className="flex items-center gap-2 text-black">
-                  <div className="w-3 h-3 rounded-full bg-blue-500" /> Prioritas Rendah (Low)
+                  <div className="w-3 h-3 rounded-full bg-blue-500" /> Prioritas
+                  Rendah (Low)
                 </div>
               </div>
             </div>
 
             {/* MAP RENDERING AREA */}
             <div className="h-[300px] sm:h-[400px] lg:h-[500px] rounded-[28px] overflow-hidden border border-[#e5f1e7] relative z-10">
-              <MapContainer center={batamCenterCoordinates} zoom={12} scrollWheelZoom={true} className="w-full h-full">
+              <MapContainer
+                center={batamCenterCoordinates}
+                zoom={12}
+                scrollWheelZoom={true}
+                className="w-full h-full"
+              >
                 <TileLayer
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
 
-                {!loading && !error && reports.map((report, idx) => {
-                  if (!report.location?.latitude || !report.location?.longitude) return null;
+                {!loading &&
+                  !error &&
+                  reports.map((report, idx) => {
+                    if (
+                      !report.location?.latitude ||
+                      !report.location?.longitude
+                    )
+                      return null;
 
-                  const lat = parseFloat(report.location.latitude);
-                  const lng = parseFloat(report.location.longitude);
-                  const currentStatus = report.status?.toLowerCase() || "pending";
+                    const lat = parseFloat(report.location.latitude);
+                    const lng = parseFloat(report.location.longitude);
+                    const currentStatus =
+                      report.status?.toLowerCase() || "pending";
 
-                  return (
-                    <Marker 
-                      key={report.id || idx} 
-                      position={[lat, lng]}
-                      icon={createCustomIcon(report.priority)}
-                    >
-                      <Popup>
-                        <div className="p-1 font-sans text-black min-w-[200px] max-w-[240px]">
-                          
-                          {report.images && report.images.length > 0 ? (
-                            <div className="w-full h-28 rounded-xl overflow-hidden mb-2.5 bg-gray-100 border border-gray-100">
-                              <img 
-                                src={`${import.meta.env.VITE_API_URL}${report.images[0]}`} 
-                                alt={report.title} 
-                                className="w-full h-full object-cover"
-                                loading="lazy"
-                              />
-                            </div>
-                          ) : (
-                            <div className="w-full h-24 rounded-xl mb-2.5 bg-gray-100 flex items-center justify-center text-gray-400 text-[11px]">
-                              Tidak ada foto bukti
-                            </div>
-                          )}
-
-                          <span className="bg-gray-100 text-gray-700 font-mono text-[10px] px-2 py-0.5 rounded">
-                            ID: {report.id}
-                          </span>
-                          
-                          <h4 className="font-bold text-sm border-b pb-1 mt-1.5 mb-1 text-gray-900 truncate">
-                            {report.title}
-                          </h4>
-                          
-                          <p className="text-xs text-gray-600 m-0 leading-relaxed">
-                            Kategori: <span className="font-medium text-black">{getCategoryLabel(report.category)}</span>
-                          </p>
-                          
-                          <p className="text-xs text-gray-600 m-0 leading-relaxed">
-                            Prioritas: <span className={`font-bold ${
-                              report.priority?.toLowerCase() === "high" ? "text-red-600" :
-                              report.priority?.toLowerCase() === "medium" ? "text-amber-600" : "text-blue-600"
-                            }`}>{report.priority || "low"}</span>
-                          </p>
-                          
-                          <p className="text-xs text-gray-600 m-0 mb-3 leading-relaxed">
-                            Status: <span className="font-medium text-gray-800 uppercase text-[11px]">{currentStatus}</span>
-                          </p>
-
-                          {/* BARU: Kontrol Tombol Aksi Status Satu Arah */}
-                          <div className="mt-2 pt-2 border-t border-gray-100 flex justify-center">
-                            {currentStatus === "pending" && (
-                              <button 
-                                onClick={() => handleStatusChange(report.id, "processing")} 
-                                className="w-full bg-blue-600 text-white text-xs py-1.5 rounded shadow hover:bg-blue-700 transition font-semibold text-center"
-                              >
-                                Proses Laporan
-                              </button>
+                    return (
+                      <Marker
+                        key={report.id || idx}
+                        position={[lat, lng]}
+                        icon={createCustomIcon(report.priority)}
+                      >
+                        <Popup>
+                          <div className="p-1 font-sans text-black min-w-[200px] max-w-[240px]">
+                            {report.images && report.images.length > 0 ? (
+                              <div className="w-full h-28 rounded-xl overflow-hidden mb-2.5 bg-gray-100 border border-gray-100">
+                                <img
+                                  src={`https://hamameyu.infinitelearningstudent.id${report.images[0]}`}
+                                  alt={report.title}
+                                  className="w-full h-full object-cover"
+                                  loading="lazy"
+                                />
+                              </div>
+                            ) : (
+                              <div className="w-full h-24 rounded-xl mb-2.5 bg-gray-100 flex items-center justify-center text-gray-400 text-[11px]">
+                                Tidak ada foto bukti
+                              </div>
                             )}
-                            {currentStatus === "processing" && (
-                              <button 
-                                onClick={() => handleStatusChange(report.id, "done")} 
-                                className="w-full bg-green-600 text-white text-xs py-1.5 rounded shadow hover:bg-green-700 transition font-semibold text-center"
-                              >
-                                Selesaikan
-                              </button>
-                            )}
-                            {currentStatus === "done" && (
-                              <span className="text-gray-400 italic text-xs py-1 block text-center">
-                                ✓ Laporan Selesai
+
+                            <span className="bg-gray-100 text-gray-700 font-mono text-[10px] px-2 py-0.5 rounded">
+                              ID: {report.id}
+                            </span>
+
+                            <h4 className="font-bold text-sm border-b pb-1 mt-1.5 mb-1 text-gray-900 truncate">
+                              {report.title}
+                            </h4>
+
+                            <p className="text-xs text-gray-600 m-0 leading-relaxed">
+                              Kategori:{" "}
+                              <span className="font-medium text-black">
+                                {getCategoryLabel(report.category)}
                               </span>
-                            )}
-                          </div>
+                            </p>
 
-                        </div>
-                      </Popup>
-                    </Marker>
-                  );
-                })}
+                            <p className="text-xs text-gray-600 m-0 leading-relaxed">
+                              Prioritas:{" "}
+                              <span
+                                className={`font-bold ${
+                                  report.priority?.toLowerCase() === "high"
+                                    ? "text-red-600"
+                                    : report.priority?.toLowerCase() ===
+                                        "medium"
+                                      ? "text-amber-600"
+                                      : "text-blue-600"
+                                }`}
+                              >
+                                {report.priority || "low"}
+                              </span>
+                            </p>
+
+                            <p className="text-xs text-gray-600 m-0 mb-3 leading-relaxed">
+                              Status:{" "}
+                              <span className="font-medium text-gray-800 uppercase text-[11px]">
+                                {currentStatus}
+                              </span>
+                            </p>
+
+                            {/* BARU: Kontrol Tombol Aksi Status Satu Arah */}
+                            <div className="mt-2 pt-2 border-t border-gray-100 flex justify-center">
+                              {currentStatus === "pending" && (
+                                <button
+                                  onClick={() =>
+                                    handleStatusChange(report.id, "processing")
+                                  }
+                                  className="w-full bg-blue-600 text-white text-xs py-1.5 rounded shadow hover:bg-blue-700 transition font-semibold text-center"
+                                >
+                                  Proses Laporan
+                                </button>
+                              )}
+                              {currentStatus === "processing" && (
+                                <button
+                                  onClick={() =>
+                                    handleStatusChange(report.id, "done")
+                                  }
+                                  className="w-full bg-green-600 text-white text-xs py-1.5 rounded shadow hover:bg-green-700 transition font-semibold text-center"
+                                >
+                                  Selesaikan
+                                </button>
+                              )}
+                              {currentStatus === "done" && (
+                                <span className="text-gray-400 italic text-xs py-1 block text-center">
+                                  ✓ Laporan Selesai
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </Popup>
+                      </Marker>
+                    );
+                  })}
               </MapContainer>
             </div>
           </div>
 
           {/* STATES METRICS UTILITY */}
-          {loading && <div className="text-center py-10 text-gray-500 text-sm animate-pulse">Mengambil statistik geospasial database...</div>}
-          {error && <div className="text-center py-6 text-red-500 text-sm bg-red-50 border border-red-100 rounded-2xl">⚠️ Gagal sinkronisasi peta: {error}</div>}
+          {loading && (
+            <div className="text-center py-10 text-gray-500 text-sm animate-pulse">
+              Mengambil statistik geospasial database...
+            </div>
+          )}
+          {error && (
+            <div className="text-center py-6 text-red-500 text-sm bg-red-50 border border-red-100 rounded-2xl">
+              ⚠️ Gagal sinkronisasi peta: {error}
+            </div>
+          )}
 
           {/* MOBILE CARD VIEW */}
           {!loading && !error && (
             <div className="grid grid-cols-1 gap-4 lg:hidden mb-8">
               {redzones.map((item, index) => (
-                <div key={index} className="bg-white border border-[#edf3ee] rounded-[24px] p-5">
+                <div
+                  key={index}
+                  className="bg-white border border-[#edf3ee] rounded-[24px] p-5"
+                >
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <h3 className="font-bold text-black text-base">{item.area}</h3>
-                      <p className="text-sm text-gray-500 mt-1">Masalah: {item.issue}</p>
+                      <h3 className="font-bold text-black text-base">
+                        {item.area}
+                      </h3>
+                      <p className="text-sm text-gray-500 mt-1">
+                        Masalah: {item.issue}
+                      </p>
                     </div>
-                    <span className={`text-xs px-3 py-1.5 rounded-full font-semibold ${getLevelStyle(item.level)}`}>
-                      {item.level === "High" ? "Risiko Tinggi" : item.level === "Medium" ? "Risiko Sedang" : "Risiko Rendah"}
+                    <span
+                      className={`text-xs px-3 py-1.5 rounded-full font-semibold ${getLevelStyle(item.level)}`}
+                    >
+                      {item.level === "High"
+                        ? "Risiko Tinggi"
+                        : item.level === "Medium"
+                          ? "Risiko Sedang"
+                          : "Risiko Rendah"}
                     </span>
                   </div>
                   <div className="mt-5 flex items-center justify-between">
                     <div>
                       <p className="text-xs text-gray-400">Jumlah Laporan</p>
-                      <h4 className="text-xl font-black text-black mt-1">{item.reports} Laporan</h4>
+                      <h4 className="text-xl font-black text-black mt-1">
+                        {item.reports} Laporan
+                      </h4>
                     </div>
-                    <button className="bg-[#eef9f0] text-[#51a750] text-sm px-5 py-3 rounded-full font-semibold">Detail</button>
+                    <button className="bg-[#eef9f0] text-[#51a750] text-sm px-5 py-3 rounded-full font-semibold">
+                      Detail
+                    </button>
                   </div>
                 </div>
               ))}
@@ -366,8 +474,13 @@ export default function AdminRedzonePage() {
           {!loading && !error && (
             <div className="hidden lg:block bg-white rounded-[30px] border border-[#edf3ee] p-6 overflow-hidden">
               <div className="mb-6">
-                <h2 className="text-lg font-bold text-black">Detail Area Redzone</h2>
-                <p className="text-sm text-gray-500 mt-1">Statistik akumulasi laporan aktif berdasarkan wilayah administratif terdekat.</p>
+                <h2 className="text-lg font-bold text-black">
+                  Detail Area Redzone
+                </h2>
+                <p className="text-sm text-gray-500 mt-1">
+                  Statistik akumulasi laporan aktif berdasarkan wilayah
+                  administratif terdekat.
+                </p>
               </div>
 
               <div className="overflow-x-auto">
@@ -383,17 +496,32 @@ export default function AdminRedzonePage() {
                   </thead>
                   <tbody>
                     {redzones.map((item, index) => (
-                      <tr key={index} className="border-b border-gray-50 hover:bg-[#f8fcf8] transition">
-                        <td className="py-5 font-semibold text-sm text-black">{item.area}</td>
+                      <tr
+                        key={index}
+                        className="border-b border-gray-50 hover:bg-[#f8fcf8] transition"
+                      >
+                        <td className="py-5 font-semibold text-sm text-black">
+                          {item.area}
+                        </td>
                         <td>
-                          <span className={`text-xs px-3 py-1.5 rounded-full font-semibold ${getLevelStyle(item.level)}`}>
-                            {item.level === "High" ? "Risiko Tinggi" : item.level === "Medium" ? "Risiko Sedang" : "Risiko Rendah"}
+                          <span
+                            className={`text-xs px-3 py-1.5 rounded-full font-semibold ${getLevelStyle(item.level)}`}
+                          >
+                            {item.level === "High"
+                              ? "Risiko Tinggi"
+                              : item.level === "Medium"
+                                ? "Risiko Sedang"
+                                : "Risiko Rendah"}
                           </span>
                         </td>
-                        <td className="text-sm text-gray-600">{item.reports} laporan aktif</td>
+                        <td className="text-sm text-gray-600">
+                          {item.reports} laporan aktif
+                        </td>
                         <td className="text-sm text-gray-600">{item.issue}</td>
                         <td>
-                          <button className="bg-[#eef9f0] text-[#51a750] text-xs px-4 py-2 rounded-full font-semibold hover:scale-105 transition">Lihat Detail</button>
+                          <button className="bg-[#eef9f0] text-[#51a750] text-xs px-4 py-2 rounded-full font-semibold hover:scale-105 transition">
+                            Lihat Detail
+                          </button>
                         </td>
                       </tr>
                     ))}
