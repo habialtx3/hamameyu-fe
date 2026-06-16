@@ -11,7 +11,7 @@ export default function UserDashboardPage() {
     const fetchDashboardData = async () => {
       try {
         // 1. Ambil data user yang sedang login saat ini dari API Me
-        const authResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/me`, {
+        const authResponse = await fetch("/api/auth/me", {
           method: "GET",
           credentials: "include", // Wajib agar cookie token ikut terkirim
         });
@@ -25,17 +25,17 @@ export default function UserDashboardPage() {
 
         // 2. Ambil semua data laporan dari reportService
         const responseJson = await reportService.getAllReports();
-        
+
         if (currentUserId) {
           if (responseJson && responseJson.success) {
             // Filter menggunakan ID user yang dinamis, bukan angka 8 lagi
             const myReports = responseJson.data.filter(
-              (item) => item.user_id === currentUserId
+              (item) => item.user_id === currentUserId,
             );
             setReports(myReports);
           } else if (Array.isArray(responseJson)) {
             const myReports = responseJson.filter(
-              (item) => item.user_id === currentUserId
+              (item) => item.user_id === currentUserId,
             );
             setReports(myReports);
           }
@@ -56,7 +56,7 @@ export default function UserDashboardPage() {
     (r) => r.status === "processing" || r.status === "diproses",
   ).length;
   const resolvedComplaints = reports.filter(
-    (r) => r.status === "done" || r.status === "selesai"
+    (r) => r.status === "done" || r.status === "selesai",
   ).length;
 
   // Mengatur warna bodi kartu, ketebalan border, dan warna teks utama berdasarkan status
