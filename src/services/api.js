@@ -9,17 +9,24 @@ export const reportService = {
     try {
       const response = await fetch(`${BASE_URL}/reports`, {
         method: "POST",
-        credentials: "include", // Tetap wajib agar cookie token (JWT) kamu ikut terkirim
-        body: formData, // Mengirim objek FormData
+        credentials: "include",
+        body: formData, // Biarkan browser yang mengatur Content-Type secara otomatis
       });
-      
+
+      // JIKA RESPONS NYA ERROR (Bukan JSON sukses)
+      if (!response.ok) {
+        const errorText = await response.text(); // Ambil teks mentah (HTML/Teks biasa)
+        console.error("RESPON ERROR ASLI DARI VPS:", errorText);
+        return { success: false, message: `Server Error: ${response.status} - ${errorText}` };
+      }
+
       return await response.json();
     } catch (error) {
       console.error("Gagal membuat laporan di service:", error);
       return { success: false, message: "Terjadi kesalahan jaringan." };
     }
   },
-  
+
   // Get All Reports
   getAllReports: async () => {
     try {
