@@ -186,37 +186,30 @@ export default function ReportSubmissionPage() {
               {/* GROUP SELECT: PRIORITAS & KATEGORI */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 {/* TINGKAT PRIORITAS (ENUM VALID) */}
+                {/* TINGKAT PRIORITAS (KEMBALI KE ASLI DAN BENAR) */}
                 <div>
                   <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
                     Tingkat Prioritas
                   </label>
                   <select
-                    {...register("category", {
-                      required: "Silakan pilih salah satu kategori",
-                    })}
+                    {...register("priority")}
                     className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 outline-none transition-all focus:border-black focus:ring-4 focus:ring-gray-100"
                   >
-                    <option value="">Pilih kategori laporan</option>
-                    {CATEGORY_OPTIONS.map((item) => (
-                      <option key={item.value} value={item.value}>
-                        {item.icon} {item.label}
-                      </option>
-                    ))}
+                    <option value="low">Rendah (Low)</option>
+                    <option value="medium">Sedang (Medium)</option>
+                    <option value="high">Tinggi / Mendesak (High)</option>
                   </select>
-                  {errors.category && (
-                    <p className="text-xs text-red-500 mt-1 font-semibold">
-                      {errors.category.message}
-                    </p>
-                  )}
                 </div>
 
-                {/* KATEGORI LAPORAN (ENUM VALID) */}
+                {/* KATEGORI LAPORAN (BENAR) */}
                 <div>
                   <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
                     Kategori Aduan Masalah
                   </label>
                   <select
-                    {...register("category", { required: true })}
+                    {...register("category", {
+                      required: "Silakan pilih salah satu kategori",
+                    })}
                     className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 outline-none transition-all focus:border-black focus:ring-4 focus:ring-gray-100"
                   >
                     <option value="" disabled>
@@ -228,6 +221,11 @@ export default function ReportSubmissionPage() {
                       </option>
                     ))}
                   </select>
+                  {errors.category && (
+                    <p className="text-xs text-red-500 mt-1 font-semibold">
+                      {errors.category.message}
+                    </p>
+                  )}
                 </div>
               </div>
 

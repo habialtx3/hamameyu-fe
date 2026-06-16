@@ -3,6 +3,10 @@
     {
       "source": "/api/:path*",
       "destination": "https://hamameyu.infinitelearningstudent.id/api/:path*"
+    },
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
     }
   ]
 }
