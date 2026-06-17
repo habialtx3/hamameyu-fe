@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { reportService } from "../../../services/api";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { useNavigate, Link } from "react-router-dom";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -8,6 +9,8 @@ import "leaflet/dist/leaflet.css";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
 import Sidebar from "../components/sidebar";
+// Import komponen ViewImage untuk fitur pop-up gambar 🌟
+import ViewImage from "../../../components/ViewImage";
 
 // Fix bug ikon Leaflet default
 let DefaultIcon = L.icon({
@@ -40,11 +43,16 @@ const createCustomIcon = (priority) => {
 };
 
 export default function AdminRedzonePage() {
+  const navigate = useNavigate();
   const [reports, setReports] = useState([]);
   const [redzones, setRedzones] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [timeFilter, setTimeFilter] = useState("7 Hari Terakhir");
+
+  // State untuk manajemen modal gambar 🌟
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedImg, setSelectedImg] = useState("");
 
   const batamCenterCoordinates = [1.1278, 104.0526];
 
@@ -169,7 +177,7 @@ export default function AdminRedzonePage() {
     fetchAndProcessData();
   }, []);
 
-  // BARU: Fungsi Handler untuk Mengubah Status dari dalam Popup Map
+  // Fungsi Handler untuk Mengubah Status dari dalam Popup Map
   const handleStatusChange = async (id, newStatus) => {
     const confirmation = window.confirm(`Ubah status laporan ke ${newStatus}?`);
     if (!confirmation) return;
@@ -212,8 +220,7 @@ export default function AdminRedzonePage() {
               Peta Redzone
             </h1>
             <p className="text-sm text-gray-500 mt-1">
-              Pantau semua koordinat laporan aktif warga di Kota Batam secara
-              real-time.
+              Pantau semua koordinat laporan aktif warga di Kota Batam secara real-time.
             </p>
           </div>
 
@@ -232,9 +239,6 @@ export default function AdminRedzonePage() {
                 ▼
               </span>
             </div>
-            {/* <button className="bg-[#51a750] hover:bg-[#459144] text-white px-6 py-3 rounded-full text-sm font-semibold transition whitespace-nowrap">
-              Export Map
-            </button> */}
           </div>
         </header>
 
@@ -269,23 +273,19 @@ export default function AdminRedzonePage() {
                   Peta Sebaran Laporan Individu
                 </h2>
                 <p className="text-sm text-gray-500 mt-1">
-                  Menampilkan pin lokasi asli dari setiap laporan yang dikirim
-                  warga.
+                  Menampilkan pin lokasi asli dari setiap laporan yang dikirim warga.
                 </p>
               </div>
 
               <div className="flex flex-wrap items-center gap-4 text-xs">
                 <div className="flex items-center gap-2 text-black">
-                  <div className="w-3 h-3 rounded-full bg-red-500" /> Prioritas
-                  Tinggi (High)
+                  <div className="w-3 h-3 rounded-full bg-red-500" /> Prioritas Tinggi (High)
                 </div>
                 <div className="flex items-center gap-2 text-black">
-                  <div className="w-3 h-3 rounded-full bg-amber-500" />{" "}
-                  Prioritas Sedang (Medium)
+                  <div className="w-3 h-3 rounded-full bg-amber-500" /> Prioritas Sedang (Medium)
                 </div>
                 <div className="flex items-center gap-2 text-black">
-                  <div className="w-3 h-3 rounded-full bg-blue-500" /> Prioritas
-                  Rendah (Low)
+                  <div className="w-3 h-3 rounded-full bg-blue-500" /> Prioritas Rendah (Low)
                 </div>
               </div>
             </div>
@@ -306,16 +306,12 @@ export default function AdminRedzonePage() {
                 {!loading &&
                   !error &&
                   reports.map((report, idx) => {
-                    if (
-                      !report.location?.latitude ||
-                      !report.location?.longitude
-                    )
-                      return null;
+                    if (!report.location?.latitude || !report.location?.longitude) return null;
 
                     const lat = parseFloat(report.location.latitude);
                     const lng = parseFloat(report.location.longitude);
-                    const currentStatus =
-                      report.status?.toLowerCase() || "pending";
+                    const currentStatus = report.status?.toLowerCase() || "pending";
+                    const fullSrc = `https://hamameyu.infinitelearningstudent.id${report.images?.[0]}`;
 
                     return (
                       <Marker
@@ -326,12 +322,17 @@ export default function AdminRedzonePage() {
                         <Popup>
                           <div className="p-1 font-sans text-black min-w-[200px] max-w-[240px]">
                             {report.images && report.images.length > 0 ? (
-                              <div className="w-full h-28 rounded-xl overflow-hidden mb-2.5 bg-gray-100 border border-gray-100">
+                              <div className="w-full h-28 rounded-xl overflow-hidden mb-2.5 bg-gray-100 border border-gray-100 cursor-pointer group relative">
                                 <img
-                                  src={`https://hamameyu.infinitelearningstudent.id${report.images[0]}`}
+                                  src={fullSrc}
                                   alt={report.title}
-                                  className="w-full h-full object-cover"
+                                  className="w-full h-full object-cover group-hover:scale-105 transition duration-200"
                                   loading="lazy"
+                                  // Tambahkan event click untuk memicu modal pop-up ViewImage 🌟
+                                  onClick={() => {
+                                    setSelectedImg(fullSrc);
+                                    setIsModalOpen(true);
+                                  }}
                                 />
                               </div>
                             ) : (
@@ -344,8 +345,15 @@ export default function AdminRedzonePage() {
                               ID: {report.id}
                             </span>
 
+                            {/* JUDUL JADI LINK DIRECT KE DETAIL LAPORAN 🌟 */}
                             <h4 className="font-bold text-sm border-b pb-1 mt-1.5 mb-1 text-gray-900 truncate">
-                              {report.title}
+                              <Link 
+                                to={`/admin/reports/${report.id}`} 
+                                state={{ from: "/admin/map-redzone" }}
+                                className="text-black hover:text-[#51a750] hover:underline transition-all block"
+                              >
+                                {report.title}
+                              </Link>
                             </h4>
 
                             <p className="text-xs text-gray-600 m-0 leading-relaxed">
@@ -361,8 +369,7 @@ export default function AdminRedzonePage() {
                                 className={`font-bold ${
                                   report.priority?.toLowerCase() === "high"
                                     ? "text-red-600"
-                                    : report.priority?.toLowerCase() ===
-                                        "medium"
+                                    : report.priority?.toLowerCase() === "medium"
                                       ? "text-amber-600"
                                       : "text-blue-600"
                                 }`}
@@ -378,13 +385,10 @@ export default function AdminRedzonePage() {
                               </span>
                             </p>
 
-                            {/* BARU: Kontrol Tombol Aksi Status Satu Arah */}
                             <div className="mt-2 pt-2 border-t border-gray-100 flex justify-center">
                               {currentStatus === "pending" && (
                                 <button
-                                  onClick={() =>
-                                    handleStatusChange(report.id, "processing")
-                                  }
+                                  onClick={() => handleStatusChange(report.id, "processing")}
                                   className="w-full bg-blue-600 text-white text-xs py-1.5 rounded shadow hover:bg-blue-700 transition font-semibold text-center"
                                 >
                                   Proses Laporan
@@ -392,9 +396,7 @@ export default function AdminRedzonePage() {
                               )}
                               {currentStatus === "processing" && (
                                 <button
-                                  onClick={() =>
-                                    handleStatusChange(report.id, "done")
-                                  }
+                                  onClick={() => handleStatusChange(report.id, "done")}
                                   className="w-full bg-green-600 text-white text-xs py-1.5 rounded shadow hover:bg-green-700 transition font-semibold text-center"
                                 >
                                   Selesaikan
@@ -478,8 +480,7 @@ export default function AdminRedzonePage() {
                   Detail Area Redzone
                 </h2>
                 <p className="text-sm text-gray-500 mt-1">
-                  Statistik akumulasi laporan aktif berdasarkan wilayah
-                  administratif terdekat.
+                  Statistik akumulasi laporan aktif berdasarkan wilayah administratif terdekat.
                 </p>
               </div>
 
@@ -532,6 +533,14 @@ export default function AdminRedzonePage() {
           )}
         </div>
       </main>
+
+      {/* MODAL POP-UP VIEW IMAGE CONTAINER 🌟 */}
+      <ViewImage
+        isOpen={isModalOpen}
+        src={selectedImg}
+        alt="Detail Pratinjau Bukti Geospasial"
+        onClose={() => setIsModalOpen(false)}
+      />
     </div>
   );
 }

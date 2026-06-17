@@ -13,7 +13,7 @@ export default function UserReportsPage() {
     setIsLoading(true);
     try {
       // 2. Ambil data sesi user dari API Me
-      const authResponse = await fetch("${import.meta.env.VITE_API_URL}/api/auth/me", {
+      const authResponse = await fetch("/api/auth/me", {
         method: "GET",
         credentials: "include",
       });

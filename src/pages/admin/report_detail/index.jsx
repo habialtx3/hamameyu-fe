@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-// 1. IMPORT SERVICE DARI API.JS KAMU 🌟
+// Import service dari api.js kamu 🌟
 import { reportService } from "../../../services/api"; 
+// Import komponen ViewImage yang sudah dibuat sebelumnya (sesuaikan path-nya)
+import ViewImage from "../../../components/ViewImage"; 
 
 // Data Opsi Kategori Bahasa Indonesia
 const CATEGORY_OPTIONS = [
@@ -23,16 +25,18 @@ export default function AdminReportDetailPage() {
   const [selectedStatus, setSelectedStatus] = useState("pending");
   const [isUpdating, setIsUpdating] = useState(false);
 
+  // State untuk kontrol pop-up gambar
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedImg, setSelectedImg] = useState("");
+
   useEffect(() => {
     fetchReportDetail();
   }, [id]);
 
-  // 2. FETCH DETAIL MENGGUNAKAN SERVICE AGAR URL-NYA SAMA PERSIS DENGAN BRUNO
+  // FETCH DETAIL MENGGUNAKAN SERVICE AGAR URL-NYA SAMA PERSIS DENGAN BRUNO
   const fetchReportDetail = async () => {
     setIsLoading(true);
     try {
-      // Kita bisa buat helper di api.js nanti, tapi untuk sementara jika menembak langsung, 
-      // pastikan URL-nya sinkron menggunakan BASE_URL yang sama dengan Bruno yaitu `/api`
       const response = await fetch(`/api/reports/${id}`);
       const responseJson = await response.json();
       
@@ -47,7 +51,7 @@ export default function AdminReportDetailPage() {
     }
   };
 
-  // 3. FUNGSI HANDLER UPDATE STATUS YANG SUDAH DISINKRONKAN DENGAN API.JS 🌟
+  // FUNGSI HANDLER UPDATE STATUS YANG SUDAH DISINKRONKAN DENGAN API.JS 🌟
   const handleStatusUpdate = async () => {
     const confirmation = window.confirm(
       `Apakah Anda yakin ingin mengubah status laporan ini menjadi ${selectedStatus.toUpperCase()}?`
@@ -56,7 +60,6 @@ export default function AdminReportDetailPage() {
 
     setIsUpdating(true);
     try {
-      // Memanggil fungsi dari api.js kamu yang tadi dicoba di Bruno dan berhasil
       const result = await reportService.updateStatus(id, selectedStatus);
 
       if (result && result.success) {
@@ -176,20 +179,28 @@ export default function AdminReportDetailPage() {
               </p>
             </div>
 
+            {/* Bagian Foto Bukti Lampiran */}
             <div>
               <h3 className="text-black mb-4 font-bold text-sm uppercase tracking-wide text-gray-500">
                 Foto Bukti Lampiran ({report.images?.length || 0})
               </h3>
               <div className="grid grid-cols-2 gap-4">
                 {report.images && report.images.length > 0 ? (
-                  report.images.map((imgUrl, idx) => (
-                    <img
-                      key={idx}
-                      src={`https://hamameyu.infinitelearningstudent.id${imgUrl}`}
-                      alt={`Bukti Keluhan ${idx + 1}`}
-                      className="w-full aspect-square object-cover rounded-3xl border border-gray-200 shadow-sm"
-                    />
-                  ))
+                  report.images.map((imgUrl, idx) => {
+                    const fullSrc = `https://hamameyu.infinitelearningstudent.id${imgUrl}`;
+                    return (
+                      <img
+                        key={idx}
+                        src={fullSrc}
+                        alt={`Bukti Keluhan ${idx + 1}`}
+                        className="w-full aspect-square object-cover rounded-3xl border border-gray-200 shadow-sm cursor-pointer hover:opacity-90 transition duration-200"
+                        onClick={() => {
+                          setSelectedImg(fullSrc);
+                          setIsModalOpen(true);
+                        }}
+                      />
+                    );
+                  })
                 ) : (
                   <div className="col-span-2 py-8 bg-white border border-dashed border-gray-300 text-center text-gray-400 rounded-3xl text-sm">
                     Tidak ada lampiran foto.
@@ -207,7 +218,7 @@ export default function AdminReportDetailPage() {
               </h2>
             </div>
 
-            {/* SPESIAL MANAJEMEN STATUS KONTROL */}
+            {/* MANAJEMEN STATUS KONTROL */}
             <div className="bg-white border border-[#edf3ee] rounded-[2rem] p-6 mb-6 shadow-sm">
               <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
                 Ubah Status Progres Lapangan
@@ -306,6 +317,14 @@ export default function AdminReportDetailPage() {
 
         </div>
       </div>
+
+      {/* MODAL POP-UP VIEW IMAGE */}
+      <ViewImage
+        isOpen={isModalOpen}
+        src={selectedImg}
+        alt="Detail Bukti Lampiran Admin"
+        onClose={() => setIsModalOpen(false)}
+      />
     </div>
   );
 }
