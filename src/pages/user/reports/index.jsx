@@ -8,6 +8,10 @@ export default function UserReportsPage() {
   const [reports, setReports] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
+  
+  // State untuk Pagination (5 item per halaman)
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   const fetchUserReports = async () => {
     setIsLoading(true);
@@ -52,6 +56,11 @@ export default function UserReportsPage() {
   useEffect(() => {
     fetchUserReports();
   }, []);
+
+  // Reset ke halaman 1 setiap kali user mengetik di kolom pencarian
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
 
   // HELPER 1: Mengatur warna bodi kartu, ketebalan border, dan warna teks utama
   const getCardStyle = (status) => {
@@ -111,15 +120,26 @@ export default function UserReportsPage() {
     }
   };
 
-  // FILTER SEARCH (Memeriksa judul, ID, atau deskripsi laporan)
+  // FILTER SEARCH & SANITISASI JUDUL DARI DUPLICATE
   const filteredReports = reports.filter((report) => {
     const query = search.toLowerCase();
+    
+    // Sembunyikan pencarian kata '-duplicate' agar pencarian judul tetap natural
+    const hasDuplicate = report.title?.toLowerCase().endsWith("-duplicate");
+    const displayTitle = hasDuplicate ? report.title.slice(0, -10) : report.title;
+
     return (
-      report.title?.toLowerCase().includes(query) ||
+      displayTitle?.toLowerCase().includes(query) ||
       report.id?.toString().toLowerCase().includes(query) ||
       report.description?.toLowerCase().includes(query)
     );
   });
+
+  // LOGIKA PAGINATION
+  const totalPages = Math.ceil(filteredReports.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredReports.slice(indexOfFirstItem, indexOfLastItem);
 
   if (isLoading) {
     return (
@@ -169,8 +189,8 @@ export default function UserReportsPage() {
 
         {/* REPORT LIST CONTAINER */}
         <div className="space-y-4">
-          {filteredReports.length > 0 ? (
-            filteredReports.map((report) => {
+          {currentItems.length > 0 ? (
+            currentItems.map((report) => {
               const cardStyle = getCardStyle(report.status);
               const badgeStyle = getBadgeStyle(report.status);
 
@@ -181,6 +201,10 @@ export default function UserReportsPage() {
               const textDescColor = isDone ? "text-green-50/90" : isProcessing ? "text-amber-900/90" : "text-gray-600";
               const textTitleColor = isDone ? "text-white" : "text-black";
 
+              // PEMBERSIHAN KATA "-duplicate" DI AKHIR JUDUL
+              const hasDuplicateSuffix = report.title?.toLowerCase().endsWith("-duplicate");
+              const cleanTitle = hasDuplicateSuffix ? report.title.slice(0, -10) : report.title;
+
               return (
                 <div key={report.id} className={`rounded-[24px] p-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5 transition-all duration-200 shadow-sm ${cardStyle}`}>
                   <div className="flex-1 min-w-0">
@@ -190,7 +214,8 @@ export default function UserReportsPage() {
                       <span className={`text-[11px] px-2.5 py-0.5 rounded-full font-black uppercase tracking-wide shadow-sm ${badgeStyle}`}>{getStatusLabel(report.status)}</span>
                     </div>
 
-                    <h2 className={`text-lg sm:text-xl font-black leading-tight mb-2 ${textTitleColor}`}>{report.title}</h2>
+                    {/* Menampilkan judul yang bersih */}
+                    <h2 className={`text-lg sm:text-xl font-black leading-tight mb-2 ${textTitleColor}`}>{cleanTitle}</h2>
                     <p className={`text-sm leading-relaxed line-clamp-2 max-w-4xl ${textDescColor}`}>{report.description}</p>
                     <p className={`text-xs font-semibold mt-3 ${textMetaColor}`}>
                       Dikirim pada: {report.time_report ? new Date(report.time_report).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : report.date || "-"}
@@ -215,6 +240,39 @@ export default function UserReportsPage() {
             </div>
           )}
         </div>
+
+        {/* KONTROL NAVIGASI PAGINATION */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2 mt-8">
+            <button
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className={`px-4 py-2 rounded-xl text-sm font-bold border transition ${
+                currentPage === 1
+                  ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                  : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+              }`}
+            >
+              ← Prev
+            </button>
+            
+            <span className="text-sm font-semibold text-gray-600 px-2">
+              Page {currentPage} of {totalPages}
+            </span>
+
+            <button
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className={`px-4 py-2 rounded-xl text-sm font-bold border transition ${
+                currentPage === totalPages
+                  ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                  : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+              }`}
+            >
+              Next →
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

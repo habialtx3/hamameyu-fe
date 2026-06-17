@@ -57,6 +57,19 @@ export default function AdminDashboardPageCoba() {
     setLoading(false);
   };
 
+  // 🌟 FUNGSI HELPER: Memotong "-duplicate" dan mendeteksi penanda khusus
+  const parseTitle = (rawTitle) => {
+    if (!rawTitle) return { cleanTitle: "-", isDuplicate: false };
+
+    if (rawTitle.endsWith("-duplicate")) {
+      return {
+        cleanTitle: rawTitle.replace(/-duplicate$/, ""),
+        isDuplicate: true,
+      };
+    }
+    return { cleanTitle: rawTitle, isDuplicate: false };
+  };
+
   const handleStatusChange = async (id, newStatus) => {
     const confirmation = window.confirm(`Ubah status laporan ke ${newStatus}?`);
     if (!confirmation) return;
@@ -64,7 +77,7 @@ export default function AdminDashboardPageCoba() {
     const res = await reportService.updateStatus(id, newStatus);
     if (res.success) {
       alert("Status laporan berhasil diperbarui!");
-      fetchDashboardData(); 
+      fetchDashboardData();
     } else {
       alert("Gagal mengubah status laporan.");
     }
@@ -87,35 +100,36 @@ export default function AdminDashboardPageCoba() {
     });
 
     return Object.keys(categoriesMap).map((key) => ({
-      name: key.replace(/_/g, " "), 
+      name: key.replace(/_/g, " "),
       Jumlah: categoriesMap[key],
     }));
   }, [reports]);
 
   const pieChartData = useMemo(() => {
     return [
-      { name: "Pending", value: stats.pending, color: "#f59e0b" }, 
-      { name: "Processing", value: stats.processing, color: "#3b82f6" }, 
-      { name: "Done", value: stats.done, color: "#10b981" }, 
-    ].filter((item) => item.value > 0); 
+      { name: "Pending", value: stats.pending, color: "#f59e0b" },
+      { name: "Processing", value: stats.processing, color: "#3b82f6" },
+      { name: "Done", value: stats.done, color: "#10b981" },
+    ].filter((item) => item.value > 0);
   }, [stats]);
 
-  // BARU: Ambil 5 data laporan terbaru untuk Tabel & Aktivitas
-  // Diasumsikan data dari API urutan indeks 0 adalah yang paling baru (atau gunakan .reverse() jika terbalik)
+  // Ambil 5 data laporan terbaru untuk Tabel & Aktivitas
   const recentReports = useMemo(() => {
     return reports.slice(0, 5);
   }, [reports]);
 
-  // BARU: Generate teks notifikasi dinamis berdasarkan data laporan terbaru
+  // 🌟 UPDATE: Generate teks notifikasi menggunakan cleanTitle agar teks "-duplicate" hilang dari notifikasi
   const dynamicNotifications = useMemo(() => {
     return recentReports.map((report) => {
+      const { cleanTitle, isDuplicate } = parseTitle(report.title);
       let statusText = "menunggu verifikasi";
       if (report.status === "processing") statusText = "sedang diproses";
       if (report.status === "done") statusText = "berhasil diselesaikan";
 
       return {
-        text: `Laporan "${report.title}" di kategori ${report.category?.replace(/_/g, " ")} ${statusText}.`,
-        time: "Baru saja"
+        text: `Laporan "${cleanTitle}" ${isDuplicate ? "(Terindikasi Duplikat) " : ""}di kategori ${report.category?.replace(/_/g, " ")} ${statusText}.`,
+        time: "Baru saja",
+        isDuplicate,
       };
     });
   }, [recentReports]);
@@ -130,9 +144,7 @@ export default function AdminDashboardPageCoba() {
         {/* TOPBAR */}
         <header className="px-6 lg:px-10 py-5 flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-black text-black">
-              Dashboard Overview
-            </h1>
+            <h1 className="text-2xl font-black text-black">Dashboard Overview</h1>
             <p className="text-sm text-gray-500 mt-1">
               Monitor laporan lingkungan Kota Batam secara real-time.
             </p>
@@ -162,7 +174,6 @@ export default function AdminDashboardPageCoba() {
                 Admin Insight
               </span>
 
-              {/* BARU: Mengubah teks hardcode 124 menjadi jumlah riil dari API */}
               <h2 className="text-3xl lg:text-4xl font-black leading-tight mt-3 mb-4">
                 {loading ? "Menghitung..." : `${stats.total} total laporan masuk.`}
               </h2>
@@ -275,67 +286,95 @@ export default function AdminDashboardPageCoba() {
                 </Link>
               </div>
 
-              <div className="bg-white border border-gray-100 rounded-2xl p-6 mb-6 overflow-x-auto">
-                {/* BARU: Render menggunakan `recentReports` yang sudah dibatasi 5 data saja */}
+              <div className="bg-white border border-gray-100 rounded-2xl p-6 mb-0 overflow-x-auto">
                 {recentReports.length === 0 ? (
                   <p className="text-sm text-gray-400 text-center py-4">Belum ada data laporan masuk.</p>
                 ) : (
-                  <table className="w-full text-center border-collapse text-xs">
+                  <table className="w-full text-center border-collapse text-xs table-fixed min-w-[600px]">
                     <thead>
                       <tr className="border-b border-gray-100 text-gray-400 font-semibold">
-                        <th className="pb-3">ID</th>
-                        <th className="pb-3">Judul & Kategori</th>
-                        <th className="pb-3">Prioritas</th>
-                        <th className="pb-3">Lokasi (Lat, Long)</th>
-                        <th className="pb-3">Status</th>
-                        <th className="pb-3 text-center">Aksi RT/RW</th>
+                        <th className="pb-3 w-12">ID</th>
+                        <th className="pb-3 text-left pl-4">Judul & Kategori</th>
+                        <th className="pb-3 w-20">Prioritas</th>
+                        <th className="pb-3 w-32">Lokasi (Lat, Long)</th>
+                        <th className="pb-3 w-24">Status</th>
+                        <th className="pb-3 w-28 text-center">Aksi RT/RW</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {recentReports.map((report) => (
-                        <tr key={report.id} className="border-b border-gray-50 last:border-none hover:bg-gray-50/50">
-                          <td className="py-3 font-medium text-gray-900">#{report.id}</td>
-                          <td className="py-3">
-                            <p className="font-semibold text-gray-800">{report.title}</p>
-                            <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px] uppercase font-bold">
-                              {report.category}
-                            </span>
-                          </td>
-                          <td className="py-3">
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                              report.priority === "high" ? "bg-red-100 text-red-700" :
-                              report.priority === "medium" ? "bg-amber-100 text-amber-700" : "bg-blue-100 text-blue-700"
+                      {recentReports.map((report) => {
+                        // 🌟 EKSTRAK: Dapatkan judul bersih dan status duplikat di sini
+                        const { cleanTitle, isDuplicate } = parseTitle(report.title);
+
+                        return (
+                          <tr 
+                            key={report.id} 
+                            className={`border-b border-gray-50 last:border-none transition-colors ${
+                              isDuplicate 
+                                ? "bg-red-50/40 hover:bg-red-100/50" // Baris background kemerahan jika duplikat
+                                : "hover:bg-gray-50/50"
+                            }`}
+                          >
+                            <td className="py-4 font-medium text-gray-900">#{report.id}</td>
+                            
+                            {/* 🌟 PENANDA KHUSUS PADA KOLOM JUDUL */}
+                            <td className={`py-4 text-left pl-4 pr-2 rounded-lg ${
+                              isDuplicate ? "border-l-4 border-red-500 bg-red-100/30" : ""
                             }`}>
-                              {report.priority}
-                            </span>
-                          </td>
-                          <td className="py-3 text-gray-500 font-mono">
-                            {report.location?.latitude ? parseFloat(report.location.latitude).toFixed(4) : "-"}, {" "}
-                            {report.location?.longitude ? parseFloat(report.location.longitude).toFixed(4) : "-"}
-                          </td>
-                          <td className="py-3">
-                            <span className={`px-2 py-1 rounded-full text-[10px] font-semibold uppercase ${
-                              report.status === "pending" ? "bg-amber-100 text-amber-800" :
-                              report.status === "processing" ? "bg-blue-100 text-blue-800" : "bg-green-100 text-green-800"
-                            }`}>
-                              {report.status}
-                            </span>
-                          </td>
-                          <td className="py-3 text-center space-x-1">
-                            {report.status === "pending" && (
-                              <button onClick={() => handleStatusChange(report.id, "processing")} className="bg-blue-600 text-white px-2 py-1 rounded shadow hover:bg-blue-700 transition font-medium">
-                                Proses
-                              </button>
-                            )}
-                            {report.status === "processing" && (
-                              <button onClick={() => handleStatusChange(report.id, "done")} className="bg-green-600 text-white px-2 py-1 rounded shadow hover:bg-green-700 transition font-medium">
-                                Selesaikan
-                              </button>
-                            )}
-                            {report.status === "done" && <span className="text-gray-400 italic">No Action</span>}
-                          </td>
-                        </tr>
-                      ))}
+                              <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                                {isDuplicate && <span className="text-red-500 font-bold">⚠️</span>}
+                                <p className={`font-semibold ${isDuplicate ? "text-red-900" : "text-gray-800"} break-words max-w-full`}>
+                                  {cleanTitle}
+                                </p>
+                                {isDuplicate && (
+                                  <span className="bg-red-600 text-white px-1.5 py-0.5 rounded text-[8px] font-black tracking-wide animate-pulse shadow-sm uppercase shrink-0">
+                                    DUPLICATE
+                                  </span>
+                                )}
+                              </div>
+                              <span className={`px-2 py-0.5 rounded text-[9px] uppercase font-bold tracking-wider ${
+                                isDuplicate ? "bg-red-200/70 text-red-800" : "bg-gray-100 text-gray-600"
+                              }`}>
+                                {report.category?.replace(/_/g, " ")}
+                              </span>
+                            </td>
+
+                            <td className="py-4">
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                                report.priority === "high" ? "bg-red-100 text-red-700" :
+                                report.priority === "medium" ? "bg-amber-100 text-amber-700" : "bg-blue-100 text-blue-700"
+                              }`}>
+                                {report.priority}
+                              </span>
+                            </td>
+                            <td className="py-4 text-gray-500 font-mono text-[11px]">
+                              {report.location?.latitude ? parseFloat(report.location.latitude).toFixed(4) : "-"}, {" "}
+                              {report.location?.longitude ? parseFloat(report.location.longitude).toFixed(4) : "-"}
+                            </td>
+                            <td className="py-4">
+                              <span className={`px-2 py-1 rounded-full text-[10px] font-semibold uppercase ${
+                                report.status === "pending" ? "bg-amber-100 text-amber-800" :
+                                report.status === "processing" ? "bg-blue-100 text-blue-800" : "bg-green-100 text-green-800"
+                              }`}>
+                                {report.status}
+                              </span>
+                            </td>
+                            <td className="py-4 text-center space-x-1">
+                              {report.status === "pending" && (
+                                <button onClick={() => handleStatusChange(report.id, "processing")} className="bg-blue-600 text-white px-2 py-1 rounded shadow hover:bg-blue-700 transition font-medium">
+                                  Proses
+                                </button>
+                              )}
+                              {report.status === "processing" && (
+                                <button onClick={() => handleStatusChange(report.id, "done")} className="bg-green-600 text-white px-2 py-1 rounded shadow hover:bg-green-700 transition font-medium">
+                                  Selesaikan
+                                </button>
+                              )}
+                              {report.status === "done" && <span className="text-gray-400 italic">No Action</span>}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 )}
@@ -346,15 +385,22 @@ export default function AdminDashboardPageCoba() {
             <div className="bg-white rounded-[30px] border border-[#edf3ee] p-6">
               <h2 className="text-lg font-bold text-black mb-6">Aktivitas Terbaru</h2>
               <div className="space-y-5">
-                {/* BARU: Render menggunakan data `dynamicNotifications` riil */}
                 {dynamicNotifications.length === 0 ? (
                   <p className="text-sm text-gray-400 text-center py-4">Belum ada aktivitas baru.</p>
                 ) : (
                   dynamicNotifications.map((item, index) => (
-                    <div key={index} className="flex gap-4 items-start pb-5 border-b border-gray-50 last:border-none">
-                      <div className="w-10 h-10 rounded-2xl bg-[#eef9f0] flex items-center justify-center">🔔</div>
+                    <div key={index} className={`flex gap-4 items-start pb-5 border-b border-gray-50 last:border-none rounded-xl p-2 transition-colors ${
+                      item.isDuplicate ? "bg-red-50/50" : ""
+                    }`}>
+                      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${
+                        item.isDuplicate ? "bg-red-100" : "bg-[#eef9f0]"
+                      }`}>
+                        {item.isDuplicate ? "⚠️" : "🔔"}
+                      </div>
                       <div className="flex-1">
-                        <p className="text-sm text-gray-700 leading-relaxed">{item.text}</p>
+                        <p className={`text-sm leading-relaxed ${item.isDuplicate ? "text-red-950 font-medium" : "text-gray-700"}`}>
+                          {item.text}
+                        </p>
                         <span className="text-xs text-gray-400 mt-1 block">{item.time}</span>
                       </div>
                     </div>

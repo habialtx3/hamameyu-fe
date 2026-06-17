@@ -261,8 +261,8 @@ export default function UserDashboardPage() {
                 Belum ada laporan keluhan yang Anda buat saat ini.
               </div>
             ) : (
-              // Menghapus pembatasan slice(0, 4) agar seluruh list report milik user tersebut tampil
-              reports.map((report) => {
+              // Menggunakan .slice(0, 4) untuk membatasi tampilan maksimal 4 laporan saja di dashboard
+              reports.slice(0, 4).map((report) => {
                 const cardStyle = getCardStyle(report.status);
                 const badgeStyle = getBadgeStyle(report.status);
 
@@ -284,6 +284,13 @@ export default function UserDashboardPage() {
                   : isProcessing
                     ? "text-black"
                     : "text-black";
+
+                // LOGIKA DETEKSI "-duplicate"
+                const hasDuplicateSuffix = report.title?.toLowerCase().endsWith("-duplicate");
+                // Bersihkan judul dari kata "-duplicate" jika ada
+                const cleanTitle = hasDuplicateSuffix 
+                  ? report.title.slice(0, -10) 
+                  : report.title;
 
                 return (
                   <div
@@ -318,6 +325,7 @@ export default function UserDashboardPage() {
                             {report.category}
                           </span>
 
+
                           {/* Badge Status */}
                           <span
                             className={`text-[11px] px-2.5 py-0.5 rounded-full font-black uppercase tracking-wide shadow-sm ${badgeStyle}`}
@@ -326,11 +334,11 @@ export default function UserDashboardPage() {
                           </span>
                         </div>
 
-                        {/* Judul Laporan */}
+                        {/* Judul Laporan (Menggunakan cleanTitle yang sudah dibersihkan) */}
                         <h4
                           className={`text-base font-black mb-1 line-clamp-1 sm:max-w-[400px] md:max-w-[550px] ${textTitleColor}`}
                         >
-                          {report.title}
+                          {cleanTitle}
                         </h4>
 
                         {/* Tanggal Dikirim */}
@@ -362,6 +370,26 @@ export default function UserDashboardPage() {
                   </div>
                 );
               })
+            )}
+
+            {/* Navigasi Lihat Laporan Lain (Muncul jika total laporan melebihi 4) */}
+            {reports.length > 4 && (
+              <div className="text-center mt-4 pt-2 border-t border-gray-50">
+                <Link
+                  to="/reports"
+                  className="inline-flex items-center gap-2 text-sm font-bold text-[#51a750] hover:text-[#459144] transition-all group"
+                >
+                  Lihat Laporan Lainnya ({reports.length - 4} laporan lagi)
+                  <svg 
+                    className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" />
+                  </svg>
+                </Link>
+              </div>
             )}
           </div>
         </div>

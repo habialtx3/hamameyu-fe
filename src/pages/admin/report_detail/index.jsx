@@ -103,6 +103,14 @@ export default function AdminReportDetailPage() {
     );
   }
 
+  // --- LOGIKA DETEKSI DAN CLEANING DUPLIKAT ---
+  const rawTitle = report.title || "";
+  const isDuplicate = rawTitle.toLowerCase().endsWith("-duplicate");
+  // Jika berakhiran '-duplicate', potong string-nya untuk menghilangkan penanda tersebut
+  const cleanedTitle = isDuplicate 
+    ? rawTitle.slice(0, -10).trim() 
+    : rawTitle;
+
   let statusText = "Menunggu Ditinjau (Pending)";
   if (report.status === "processing") statusText = "Sedang Ditangani (Processing)";
   if (report.status === "done") statusText = "Selesai Ditangani (Done)";
@@ -140,6 +148,23 @@ export default function AdminReportDetailPage() {
               </h2>
             </div>
 
+            {/* SECTION SPECIAL: INDIKATOR LAPORAN DUPLIKAT 🔥 */}
+            {isDuplicate && (
+              <div className="mb-6 bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3.5 shadow-sm animate-fade-in">
+                <div className="bg-amber-100 text-amber-800 rounded-xl p-2 text-xl shrink-0">
+                  ⚠️
+                </div>
+                <div>
+                  <h4 className="font-extrabold text-amber-900 text-sm sm:text-base">
+                    Terdeteksi Multiple Report / Duplikat
+                  </h4>
+                  <p className="text-xs sm:text-sm text-amber-700 mt-0.5 leading-relaxed">
+                    Sistem menandai adanya beberapa laporan serupa untuk kasus ini. Keluhan ini terindikasi dilaporkan berulang kali oleh warga atau memiliki urgensi yang tinggi di lokasi yang sama.
+                  </p>
+                </div>
+              </div>
+            )}
+
             <div className="space-y-4 mb-8 text-base bg-white border border-[#edf3ee] p-6 rounded-3xl shadow-sm">
               <p><span className="text-gray-400 font-medium block text-xs uppercase tracking-wider">User Pelapor</span> 
                 <span className="text-black font-bold">User ID: {report.user_id}</span>
@@ -171,8 +196,14 @@ export default function AdminReportDetailPage() {
               <span className="absolute -top-3 left-6 bg-[#f6faf7] px-2 text-xs font-bold text-gray-400">
                 Isi Pengaduan Warga
               </span>
-              <h3 className="font-extrabold text-black mb-2 text-base">
-                {report.title}
+              <h3 className="font-extrabold text-black mb-2 text-base flex items-center gap-2">
+                {cleanedTitle} 
+                {/* Badge kecil penanda duplikat di samping title bersih */}
+                {isDuplicate && (
+                  <span className="bg-amber-100 text-amber-800 text-[10px] font-black px-2 py-0.5 rounded-md uppercase border border-amber-200">
+                    Duplikat
+                  </span>
+                )}
               </h3>
               <p className="text-gray-700 text-sm md:text-base leading-relaxed">
                 {report.description}

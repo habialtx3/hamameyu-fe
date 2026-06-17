@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { reportService } from "../../../services/api"; 
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -39,22 +39,61 @@ const createCustomIcon = (priority) => {
   });
 };
 
+// Komponen Pengendali Fokus Peta & Pemicu Popup Otomatis
+function MapController({ activeReport }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (activeReport && activeReport.location?.latitude && activeReport.location?.longitude) {
+      const lat = parseFloat(activeReport.location.latitude);
+      const lng = parseFloat(activeReport.location.longitude);
+      
+      // Geser titik tengah peta secara halus
+      map.flyTo([lat, lng], 15, { duration: 1.5 });
+
+      // Cari layer marker yang sesuai dan buka popup secara programmatik
+      map.eachLayer((layer) => {
+        if (layer instanceof L.Marker) {
+          const markerLatLng = layer.getLatLng();
+          if (markerLatLng.lat === lat && markerLatLng.lng === lng) {
+            setTimeout(() => {
+              layer.openPopup();
+            }, 1200); // Trigger popup setelah animasi perpindahan selesai
+          }
+        }
+      });
+    }
+  }, [activeReport, map]);
+
+  return null;
+}
+
 export default function MapReportPage() {
   const [reports, setReports] = useState([]);
-  const [currentUserId, setCurrentUserId] = useState(null); // Menyimpan ID user aktif
+  const [currentUserId, setCurrentUserId] = useState(null); 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [timeFilter, setTimeFilter] = useState("30 Hari Terakhir");
+  
+  // State interaksi peta dan pagination sidebar
+  const [activeReport, setActiveReport] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 4;
 
   const batamCenterCoordinates = [1.1278, 104.0526];
 
-  // Fetch data autentikasi dan seluruh laporan (Sama persis logikanya dengan Dashboard)
+  // Pembersihan kata -duplicate atau -duplikat di akhir kalimat secara aman
+  const getCleanTitle = (title) => {
+    if (!title) return "";
+    if (title.toLowerCase().endsWith("-duplicate")) return title.slice(0, -10);
+    if (title.toLowerCase().endsWith("-duplikat")) return title.slice(0, -9);
+    return title;
+  };
+
   useEffect(() => {
     const fetchMapPageData = async () => {
       try {
         setLoading(true);
-        
-        // 1. Ambil data user login saat ini
         const authResponse = await fetch("/api/auth/me", {
           method: "GET",
           credentials: "include",
@@ -62,10 +101,9 @@ export default function MapReportPage() {
 
         if (authResponse.ok) {
           const authData = await authResponse.json();
-          setCurrentUserId(authData.user?.id); // Set ID user secara dinamis
+          setCurrentUserId(authData.user?.id);
         }
 
-        // 2. Ambil seluruh data laporan kota
         const responseJson = await reportService.getAllReports();
         if (responseJson && responseJson.success) {
           setReports(responseJson.data || []);
@@ -85,10 +123,7 @@ export default function MapReportPage() {
     fetchMapPageData();
   }, []);
 
-  // Perhitungan statistik dinamis dan akurat (Tanpa nilai buntu/fallback palsu)
-  const totalReportsCount = reports.length;
-  
-  // Menggunakan perbandingan key 'user_id' seperti yang ada pada database/dashboard Anda
+  // Perhitungan statistik dinamis
   const myReportsCount = currentUserId 
     ? reports.filter(r => r.user_id === currentUserId).length 
     : 0;
@@ -96,6 +131,12 @@ export default function MapReportPage() {
   const resolvedReportsCount = reports.filter(
     r => r.status?.toLowerCase() === "done" || r.status?.toLowerCase() === "selesai"
   ).length;
+
+  // Logika Pagination per 4 data untuk List Nama Laporan di Sidebar
+  const totalPages = Math.ceil(reports.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentReportsList = reports.slice(indexOfFirstItem, indexOfLastItem);
 
   return (
     <div className="bg-[#f6faf7] min-h-screen flex flex-col">
@@ -139,10 +180,10 @@ export default function MapReportPage() {
       {/* MAIN CONTENT AREA */}
       <div className="flex-1 px-4 sm:px-6 lg:px-10 py-6 max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* SIDEBAR ANALYTICS PANEL */}
+        {/* SIDEBAR ANALYTICS & LIST PANEL */}
         <div className="flex flex-col gap-4 lg:col-span-1">
           
-          {/* CARD 1: Info Laporanku (SEKARANG SUDAH 0 JIKA USER BARU) */}
+          {/* CARD 1: Info Laporanku */}
           <div className="bg-white rounded-[24px] border border-[#edf3ee] p-5 shadow-sm flex items-center justify-between">
             <div>
               <p className="text-xs text-gray-400 font-medium">Laporan Saya</p>
@@ -174,21 +215,66 @@ export default function MapReportPage() {
             </div>
           </div>
 
-          {/* CARD 3: Transparansi Kota */}
-          <div className="bg-white rounded-[24px] border border-[#edf3ee] p-5 shadow-sm flex-1 flex flex-col justify-between min-h-[160px]">
+          {/* CARD 3: LIST NAMA REPORTS DENGAN PAGINATION PER 4 */}
+          <div className="bg-white rounded-[24px] border border-[#edf3ee] p-5 shadow-sm flex-1 flex flex-col justify-between min-h-[280px]">
             <div>
-              <h4 className="text-xs font-bold text-black uppercase tracking-wider">Total Transparansi Kasus</h4>
-              <p className="text-[11px] text-gray-400 mt-0.5">Semua laporan warga masuk bulan ini</p>
+              <h4 className="text-xs font-bold text-black uppercase tracking-wider mb-3">Daftar Berkas Nama Reports</h4>
+              
+              {loading ? (
+                <p className="text-xs text-gray-400 animate-pulse py-4">Memuat nama berkas aduan...</p>
+              ) : currentReportsList.length > 0 ? (
+                <div className="space-y-2.5">
+                  {currentReportsList.map((report, idx) => (
+                    <div 
+                      key={report.id || idx} 
+                      className="flex items-center justify-between p-2.5 rounded-xl border border-gray-100 hover:bg-gray-50 transition"
+                    >
+                      <div className="min-w-0 flex-1 pr-2">
+                        <p className="text-xs font-bold text-gray-800 truncate m-0">
+                          {getCleanTitle(report.title)}
+                        </p>
+                        <span className="text-[10px] text-gray-400">ID: #{report.id}</span>
+                      </div>
+                      
+                      {report.location?.latitude && report.location?.longitude ? (
+                        <button
+                          onClick={() => setActiveReport(report)}
+                          title="Fokuskan ke peta dan lihat detail"
+                          className="p-1.5 bg-green-50 hover:bg-[#51a750] text-[#51a750] hover:text-white rounded-lg text-sm transition shrink-0 shadow-xs"
+                        >
+                          📍
+                        </button>
+                      ) : (
+                        <span className="text-[10px] text-gray-400 italic">No GPS</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-gray-400 py-4 text-center">Belum tersedia data laporan.</p>
+              )}
             </div>
-            <div className="flex items-end justify-between gap-2 mt-4 pt-2 border-t border-gray-50">
-              <div>
-                <span className="text-3xl font-black text-black">{loading ? "..." : totalReportsCount}</span>
-                <span className="text-xs text-gray-500 block">Total Se-Batam</span>
+
+            {/* Navigasi Kecil Pagination Per 4 Item */}
+            {!loading && totalPages > 1 && (
+              <div className="flex items-center justify-between border-t border-gray-100 pt-3 mt-4">
+                <button
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
+                  className="px-2.5 py-1 text-[11px] font-bold bg-white border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-40 transition"
+                >
+                  ← Prev
+                </button>
+                <span className="text-[10px] text-gray-500 font-medium">Hal. {currentPage} dari {totalPages}</span>
+                <button
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
+                  className="px-2.5 py-1 text-[11px] font-bold bg-white border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-40 transition"
+                >
+                  Next →
+                </button>
               </div>
-              <div className="text-right">
-                <span className="bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-1 rounded-full">Real-time Data</span>
-              </div>
-            </div>
+            )}
           </div>
 
         </div>
@@ -222,6 +308,9 @@ export default function MapReportPage() {
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
 
+                {/* Pasang Controller Aksi Klik Disini */}
+                <MapController activeReport={activeReport} />
+
                 {reports.map((report, idx) => {
                   if (!report.location?.latitude || !report.location?.longitude) return null;
 
@@ -236,7 +325,7 @@ export default function MapReportPage() {
                       icon={createCustomIcon(report.priority)}
                     >
                       <Popup>
-                        <div className="p-1 font-sans text-black min-w-[200px] max-w-[240px]">
+                        <div className="p-1 font-sans text-black min-w-[210px] max-w-[250px]">
                           {report.images && report.images.length > 0 && (
                             <div className="w-full h-24 rounded-xl overflow-hidden mb-2 bg-gray-100">
                               <img
@@ -247,10 +336,22 @@ export default function MapReportPage() {
                               />
                             </div>
                           )}
-                          <h4 className="font-bold text-xs text-gray-900 truncate m-0">{report.title}</h4>
+                          <h4 className="font-bold text-xs text-gray-900 truncate m-0">
+                            {getCleanTitle(report.title)}
+                          </h4>
                           <p className="text-[11px] text-gray-500 m-0 mt-1">
                             Status: <span className={`font-bold uppercase ${currentStatus === 'done' || currentStatus === 'selesai' ? 'text-green-600' : 'text-amber-500'}`}>{currentStatus}</span>
                           </p>
+
+                          {/* Tombol rute dinamis /reports/:id */}
+                          <div className="mt-3 pt-2 border-t border-gray-100 text-center">
+                            <Link 
+                              to={`/reports/${report.id}`}
+                              className="inline-block w-full bg-white hover:bg-gray-100 text-green-600 text-[10px] font-black py-1.5 px-3 rounded-md transition text-center"
+                            >
+                              Lihat Detail Selengkapnya →
+                            </Link>
+                          </div>
                         </div>
                       </Popup>
                     </Marker>

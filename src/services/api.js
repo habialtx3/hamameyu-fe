@@ -5,17 +5,65 @@ const BASE_URL = `/api`;
 // ==========================================
 export const reportService = {
   // Create Report menggunakan FormData (mendukung upload gambar)
+  // Create Report dengan proteksi AI Duplicate Checker
   createReport: async (formData) => {
     try {
+      // 1. Ambil data kategori dan waktu
+      const category = formData.get("category");
+      const timeReport = formData.get("time_report") || new Date().toISOString();
+
+      // 2. Ambil koordinat menggunakan key bracket persis seperti di Bruno
+      const latRaw = formData.get("location[latitude]");
+      const lngRaw = formData.get("location[longitude]");
+
+      const latitude = latRaw ? parseFloat(latRaw) : 0;
+      const longitude = lngRaw ? parseFloat(lngRaw) : 0;
+
+      console.log("Data dikirim ke AI -> Lat:", latitude, "Lng:", longitude, "Cat:", category);
+
+      // 3. Tembak API AI untuk cek duplikasi
+      const aiUrl = "https://artnaaa-hamemayu-loka.hf.space/predict/bulk-duplicate";
+      const aiResponse = await fetch(aiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          new_report: {
+            time_report: timeReport,
+            location: {
+              latitude: latitude,
+              longitude: longitude
+            },
+            category: category
+          }
+        })
+      });
+
+      if (aiResponse.ok) {
+        const aiResult = await aiResponse.json();
+
+        // 4. JIKA DUPLIKAT: Tambahkan imbuhan "-duplicate" pada field title di FormData
+        if (aiResult.is_duplicate === true) {
+          const originalTitle = formData.get("title") || "";
+          formData.set("title", `${originalTitle}-duplicate`);
+          console.log("⚠️ AI Mendeteksi Duplikat! Judul diubah menjadi:", formData.get("title"));
+        } else {
+          console.log("✅ Aman, AI menyatakan laporan bukan duplikat.");
+        }
+      } else {
+        console.warn("Gagal terhubung ke AI Duplicate Checker, lanjut simpan laporan standar.");
+      }
+
+      // 5. Kirim data asli/termodifikasi ke API VPS Utama
       const response = await fetch(`${BASE_URL}/reports`, {
         method: "POST",
         credentials: "include",
-        body: formData, // Biarkan browser yang mengatur Content-Type secara otomatis
+        body: formData, // Browser otomatis setup boundary multipart form
       });
 
-      // JIKA RESPONS NYA ERROR (Bukan JSON sukses)
       if (!response.ok) {
-        const errorText = await response.text(); // Ambil teks mentah (HTML/Teks biasa)
+        const errorText = await response.text();
         console.error("RESPON ERROR ASLI DARI VPS:", errorText);
         return { success: false, message: `Server Error: ${response.status} - ${errorText}` };
       }
@@ -23,7 +71,7 @@ export const reportService = {
       return await response.json();
     } catch (error) {
       console.error("Gagal membuat laporan di service:", error);
-      return { success: false, message: "Terjadi kesalahan jaringan." };
+      return { success: false, message: "Terjadi kesalahan jaringan atau server." };
     }
   },
 
