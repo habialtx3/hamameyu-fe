@@ -10,7 +10,7 @@ import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
 import Sidebar from "../components/sidebar";
 // Import komponen ViewImage untuk fitur pop-up gambar 🌟
-import ViewImage from "../../../components/ViewImage";
+import ViewImage from "../../../components/ViewImages";
 
 // Fix bug ikon Leaflet default
 let DefaultIcon = L.icon({

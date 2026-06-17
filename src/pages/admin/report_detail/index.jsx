@@ -3,7 +3,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 // Import service dari api.js kamu 🌟
 import { reportService } from "../../../services/api"; 
 // Import komponen ViewImage yang sudah dibuat sebelumnya (sesuaikan path-nya)
-import ViewImage from "../../../components/ViewImage";
+import ViewImage from "../../../components/ViewImages";
 
 // Data Opsi Kategori Bahasa Indonesia
 const CATEGORY_OPTIONS = [
