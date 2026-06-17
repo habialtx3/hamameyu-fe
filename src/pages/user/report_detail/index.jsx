@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 // Sesuaikan path import ViewImage di bawah ini dengan struktur folder Anda
-import ViewImage from "../../../components/ViewImage"; 
+import ViewImage from "../../../components/ViewImage";
 
 export default function ReportDetailPage() {
   const location = useLocation();
